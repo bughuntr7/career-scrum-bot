@@ -1,0 +1,2 @@
+2026/02/12-13:33:06.463 1239a Creating DB /home/cipher/Apply Bot/"$HOME/.jobbot/jobright" npx playwright open https:/jobright.ai/jobs/recommend/Default/Session Storage since it was missing.
+2026/02/12-13:33:06.483 1239a Reusing MANIFEST /home/cipher/Apply Bot/"$HOME/.jobbot/jobright" npx playwright open https:/jobright.ai/jobs/recommend/Default/Session Storage/MANIFEST-000001

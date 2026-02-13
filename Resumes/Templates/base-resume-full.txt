@@ -1,0 +1,69 @@
+Jiayong Lin
+Machine Learning Engineer
++1 ‪(206) 580-3551‬‬‬ | Mckinney, TX 75070 | LinkedIn
+________________________________________
+SUMMARY
+Skilled Machine Learning Engineer with strong machine learning skills and programming background, with extensive experience in analyzing large-scale data, modeling, and optimization. Highly accomplished in identifying data insights and delivering the result in an easy-to-understand way.
+________________________________________
+SKILLS
+•        Machine Learning & AI: Supervised & Unsupervised Learning · Deep Learning · Recommendation Systems · Transformers · Multimodal Models · Reinforcement Learning · NLP · Model Optimization · Experiment Tracking · Ethical AI
+•        Programming & Frameworks: Python · R · Java · C# · Node.js · TypeScript · PyTorch · TensorFlow · scikit-learn · JAX · DeepSpeed · Hugging Face
+•        Data & Analytics: SQL · BigQuery · Apache Beam · Dataflow · Pandas · NumPy · Feature Engineering · ETL Pipelines · Data Warehousing · Customer Segmentation · Marketing Analytics
+•        Cloud & Infrastructure: Google Cloud Platform · Microsoft Azure · Kubernetes · Docker · Terraform · NVIDIA Triton · ML Infrastructure · MLOps · Distributed Training
+•        Backend & APIs: REST · GraphQL · gRPC · Microservices · .NET Core · Azure SQL · Data Privacy · Identity & Access Management
+•        DevOps & Reliability: CI/CD (GitHub Actions, Azure DevOps, Jenkins) · Observability · On-call Support · Security & Compliance (SOC2, HIPAA-like standards)
+•        Collaboration & Tools: Jira · Confluence · Office 365 · Teams · SharePoint · Technical Leadership · Cross-functional Collaboration · Mentorship
+________________________________________
+PROFESSIONAL EXPERIENCE
+Machine Learning Engineer | Meta | Dallas, TX | Jul 2022 – Present
+(Meta is a global leader in social technology and AI research, building foundational models and multimodal systems to power next-generation digital experiences.)
+•        Led development and optimization of advanced AI models as part of Meta's FAIR (Fundamental AI Research) team, contributing to groundbreaking projects including the Perception Encoder, Collaborative Reasoner, and Dynamic Byte Latent Transformer.
+•        Spearheaded integration of Perception Language Model (PLM) into multimodal systems, enhancing synergy between visual and linguistic data for next-gen AI assistants.
+•        Collaborated on Meta Locate 3D, enabling robotic systems to interpret spatial cues and natural language commands for real-world object identification.
+•        Played a key role in scaling Llama 4 model architecture, supporting Meta's goal to reach over 1 billion users with its AI assistant by end of 2025.
+•        Partnered with infrastructure teams to optimize model deployment across Meta's expanding GPU clusters, contributing to activation of over 1GW of computational capacity and supporting a $65B AI investment strategy.
+•        Mentored junior engineers and cross-functional teams in best practices for scalable ML pipelines, model interpretability, and ethical AI development.
+•        Published internal research on transformer efficiency and collaborative agent design, influencing Meta's roadmap for human-AI interaction
+Technologies & Skills:
+Python · PyTorch · TensorFlow · JAX · DeepSpeed · Ray · NVIDIA Triton · Hugging Face · Llama · Transformers · Multimodal Learning · Reinforcement Learning · Model Optimization · Distributed Training · ML Infrastructure · MLOps · Kubernetes · Docker · Git · Experiment Tracking · Ethical AI · Technical Leadership · Cross-functional Collaboration
+________________________________________
+Machine Learning Engineer | The Michaels Companies, Inc | Irving, TX | Aug 2020 – Jul 2022
+(Michaels is the largest arts and crafts retailer in North America, leveraging data science and machine learning to personalize customer experiences across digital and in-store channels.)
+•        Designed and deployed recommendation systems that powered Michaels' personalized product suggestions, project ideas, and promotional offers across web, mobile, and email platforms.
+•        Built collaborative filtering and content-based models using purchase history, browsing behavior, and seasonal trends to improve relevance and conversion.
+•        Engineered customer segmentation pipelines to support targeted recommendations for over 1,200 retail locations, driving increased basket size and repeat visits.
+•        Integrated predictive language models via Persado to personalize messaging and align recommendations with customer sentiment and brand tone.
+•        Developed scalable ML infrastructure for A/B testing and real-time inference, enabling continuous optimization of recommendation performance.
+•        Partnered with marketing and creative teams to ensure recommendations aligned with campaign goals and seasonal merchandising strategies.
+•        Migrated legacy recommendation workflows to cloud-native pipelines on GCP, improving model deployment speed and reducing operational overhead.
+Technologies & Skills:
+Python · scikit-learn · TensorFlow · Google Cloud Platform (BigQuery, Dataflow) · Apache Beam · SQL · Looker · Terraform · ETL Pipelines · ML Experimentation · Customer Segmentation · Marketing Analytics · Cloud ML Infrastructure · A/B Testing · Personalization Algorithms · Cross-functional Collaboration
+________________________________________
+Data Scientist | University of Maryland, Baltimore County | Baltimore, MD | Feb 2018 – May 2020
+(UMBC is a leading public research university known for its innovation in computing, engineering, and interdisciplinary data science.)
+•        Conducted applied machine learning research in collaboration with UMBC's Center for Hybrid Multicore Productivity Research (CHMPR), focusing on predictive modeling, natural language processing, and data-driven decision systems.
+•        Designed and implemented supervised and unsupervised learning models to analyze large-scale academic and institutional datasets, improving insights into student performance, retention, and resource allocation.
+•        Led data preprocessing and feature engineering efforts for research projects involving social media analytics, biomedical data, and cybersecurity threat detection.
+•        Developed reproducible data science workflows using Python, R, and Jupyter, integrating tools like scikit-learn, TensorFlow, and SQL for model training and evaluation.
+•        Presented findings at internal symposia and contributed to peer-reviewed publications, supporting UMBC's mission to advance interdisciplinary data science research.
+•        Mentored undergraduate students in data science fundamentals and research methodology, fostering a collaborative and inclusive research environment.
+Technologies & Skills:
+Python · R · scikit-learn · TensorFlow · SQL · Jupyter · Pandas · NumPy · Natural Language Processing · Data Visualization · Feature Engineering · Predictive Modeling · Cybersecurity Analytics · Biomedical Data · Academic Research · Mentorship · Research Communication
+________________________________________
+Research Assistant | University of Maryland, Baltimore County | Baltimore, MD | Sep 2016 – Feb 2018
+(UMBC is a nationally recognized public research university known for its leadership in computer science, cybersecurity, and interdisciplinary innovation.)
+•        Supported interdisciplinary research in data science and machine learning under UMBC's Department of Computer Science and Electrical Engineering.
+•        Assisted in developing predictive models for cybersecurity threat detection and anomaly classification using supervised learning techniques.
+•        Conducted data collection, preprocessing, and exploratory analysis on large-scale datasets from academic and government sources.
+•        Contributed to research on natural language processing and semantic web technologies, including work with RDF, SPARQL, and knowledge graph construction.
+•        Authored technical documentation and co-presented findings at university research symposia, contributing to grant proposals and publications.
+•        Collaborated with faculty and graduate researchers to prototype scalable ML solutions using Python, scikit-learn, and TensorFlow.
+Technologies & Skills:
+Python · scikit-learn · TensorFlow · R · SQL · RDF · SPARQL · Jupyter · Git · Data Preprocessing · NLP · Cybersecurity Analytics · Semantic Web · Knowledge Graphs · Academic Research · Technical Writing · Research Communication
+________________________________________
+EDUCATION
+Master's degree in Computer Science
+University of Maryland – College Park, MD | 2018 – 2020
+
+Bachelor's degree in Computer Science
+University of Maryland, Baltimore County – Baltimore, MD | 2013 – 2017

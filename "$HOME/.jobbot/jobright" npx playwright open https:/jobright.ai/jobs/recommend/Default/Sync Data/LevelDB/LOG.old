@@ -1,0 +1,2 @@
+2026/02/12-13:33:06.244 1237a Creating DB /home/cipher/Apply Bot/"$HOME/.jobbot/jobright" npx playwright open https:/jobright.ai/jobs/recommend/Default/Sync Data/LevelDB since it was missing.
+2026/02/12-13:33:06.272 1237a Reusing MANIFEST /home/cipher/Apply Bot/"$HOME/.jobbot/jobright" npx playwright open https:/jobright.ai/jobs/recommend/Default/Sync Data/LevelDB/MANIFEST-000001
