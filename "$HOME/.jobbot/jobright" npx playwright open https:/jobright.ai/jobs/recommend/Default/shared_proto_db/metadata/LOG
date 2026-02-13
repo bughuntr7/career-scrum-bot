@@ -1,3 +1,0 @@
-2026/02/12-13:34:11.122 12546 Reusing MANIFEST /home/cipher/Apply Bot/"$HOME/.jobbot/jobright" npx playwright open https:/jobright.ai/jobs/recommend/Default/shared_proto_db/metadata/MANIFEST-000001
-2026/02/12-13:34:11.123 12546 Recovering log #3
-2026/02/12-13:34:11.123 12546 Reusing old log /home/cipher/Apply Bot/"$HOME/.jobbot/jobright" npx playwright open https:/jobright.ai/jobs/recommend/Default/shared_proto_db/metadata/000003.log 
