@@ -26,7 +26,7 @@ function expandPath(dir: string | undefined): string {
 }
 
 const PERSISTENT_CONTEXT_DIR = expandPath(process.env.JOBRIGHT_CONTEXT_DIR);
-const MAX_JOBS_PER_RUN = Number(process.env.MAX_JOBS ?? 5);
+const MAX_JOBS_PER_RUN = Number(process.env.MAX_JOBS ?? 1);
 const USER_ID = Number(process.env.JOBBOT_USER_ID ?? 1);
 // Default to true - can be disabled via environment variable or UI
 const AUTO_GENERATE_DOCUMENTS = process.env.AUTO_GENERATE_DOCUMENTS !== "false";
@@ -337,7 +337,74 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
   try {
     // Wait for page to fully load
     await targetPage.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
-    await targetPage.waitForTimeout(2000); // Give extra time for dynamic content
+    await targetPage.waitForTimeout(3000); // Give extra time for dynamic content to render
+
+    // General strategy: Try to expand any collapsed content sections
+    // This works for any site that uses "Show more", "Read more", etc.
+    try {
+      const expandSelectors = [
+        "button:has-text('Show more')",
+        "button:has-text('Read more')",
+        "button:has-text('See more')",
+        "button:has-text('Expand')",
+        "[aria-expanded='false']",
+        "button[class*='expand']",
+        "button[class*='more']",
+      ];
+      
+      for (const selector of expandSelectors) {
+        try {
+          const expandButtons = targetPage.locator(selector);
+          const count = await expandButtons.count();
+          if (count > 0) {
+            console.log(`  🔍 Found ${count} potentially collapsed sections, attempting to expand...`);
+            // Try to expand first few buttons (don't expand all to avoid issues)
+            for (let i = 0; i < Math.min(count, 3); i++) {
+              try {
+                await expandButtons.nth(i).click({ timeout: 3000 });
+                await targetPage.waitForTimeout(500);
+              } catch (e) {
+                // Continue with next
+              }
+            }
+          }
+        } catch (e) {
+          // Continue with next selector
+        }
+      }
+    } catch (e) {
+      // Not critical, continue
+    }
+
+    // Special handling for tabbed interfaces (like AshbyHQ)
+    try {
+      const tabs = targetPage.locator("[role='tab']");
+      const tabCount = await tabs.count();
+      if (tabCount > 0) {
+        // Look for tabs that might contain the description (Overview, Description, Details, etc.)
+        const descriptionTabNames = ["overview", "description", "details", "about", "role"];
+        for (const tabName of descriptionTabNames) {
+          try {
+            const tab = targetPage.getByRole("tab", { name: new RegExp(tabName, "i") });
+            const count = await tab.count();
+            if (count > 0) {
+              const firstTab = tab.first();
+              const ariaSelected = await firstTab.getAttribute("aria-selected").catch(() => null);
+              if (ariaSelected !== "true") {
+                console.log(`  👉 Clicking "${tabName}" tab to view description...`);
+                await firstTab.click({ timeout: 5000 });
+                await targetPage.waitForTimeout(1500);
+                break; // Found and clicked a relevant tab
+              }
+            }
+          } catch (e) {
+            // Continue
+          }
+        }
+      }
+    } catch (e) {
+      // Not critical, continue
+    }
 
     // First, remove all irrelevant elements from the page
     await targetPage.evaluate(() => {
@@ -380,36 +447,45 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
     });
 
     // Priority selectors for job descriptions (most specific first)
+    // These are general patterns that work across many job sites
     const prioritySelectors = [
       // Job-specific containers (highest priority)
       "[class*='job-description']",
       "[id*='job-description']",
       "[class*='jobDescription']",
+      "[class*='JobDescription']",
       "[data-testid*='description']",
       "[data-cy*='description']",
+      "[data-testid*='job-description']",
       
       // Common job board patterns
       "[class*='job-details']",
       "[class*='job-content']",
+      "[class*='job-content']",
       "[class*='position-description']",
       "[class*='role-description']",
-      
-      // Greenhouse.io specific
-      "[id='content']",
-      "[class*='content']:not([class*='nav']):not([class*='footer'])",
-      
-      // Lever specific
-      "[class*='description-text']",
       "[class*='posting-description']",
+      "[class*='description-text']",
+      "[class*='description-content']",
       
-      // Workday specific
+      // Content containers
+      "[id='content']",
+      "[class*='content']:not([class*='nav']):not([class*='footer']):not([class*='header'])",
+      "[class*='main-content']",
+      "[class*='page-content']",
+      
+      // Job posting containers
       "[class*='jobPosting']",
+      "[class*='job-posting']",
       "[data-automation-id*='jobPosting']",
+      "[class*='posting']",
       
       // Generic but still relevant
       "article[class*='job']",
       "section[class*='job']",
-      "div[class*='job']:not([class*='card']):not([class*='list'])",
+      "div[class*='job']:not([class*='card']):not([class*='list']):not([class*='item'])",
+      "article[class*='description']",
+      "section[class*='description']",
     ];
 
     let descriptionText = "";
@@ -432,7 +508,11 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
               lowerText.includes("skills") ||
               lowerText.includes("about") ||
               lowerText.includes("role") ||
-              lowerText.includes("position");
+              lowerText.includes("position") ||
+              lowerText.includes("what you'll") ||
+              lowerText.includes("what you will") ||
+              lowerText.includes("we are looking") ||
+              lowerText.includes("looking for");
             
             // Reject if it's clearly not a job description
             const isIrrelevant = 
@@ -440,9 +520,12 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
               lowerText.includes("privacy policy") ||
               lowerText.includes("terms of service") ||
               lowerText.includes("follow us on") ||
-              lowerText.length < 200; // Too short
+              lowerText.length < 150; // Lower threshold - be more lenient
             
-            if (hasJobKeywords && !isIrrelevant && text.length > bestMatch.length) {
+            // Accept if it has job keywords OR if it's substantial text (might be a job description without obvious keywords)
+            const isAcceptable = (hasJobKeywords || text.length > 500) && !isIrrelevant;
+            
+            if (isAcceptable && text.length > bestMatch.length) {
               bestMatch = { text: text.trim(), length: text.length, selector };
             }
           }
@@ -452,21 +535,26 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
       }
     }
 
-    if (bestMatch.text && bestMatch.length > 300) {
+    // Lower threshold - be more lenient to catch more descriptions
+    const minLength = 200;
+    if (bestMatch.text && bestMatch.length > minLength) {
       descriptionText = bestMatch.text;
       console.log(`  ✓ Found description using selector: ${bestMatch.selector} (${bestMatch.length} chars)`);
     }
 
     // Strategy 2: If no good match, try extracting from main/article with smart filtering
-    if (!descriptionText || descriptionText.length < 300) {
+    if (!descriptionText || descriptionText.length < minLength) {
       try {
         // Try main content areas but be more selective
         const mainSelectors = [
           "main article",
           "main section",
+          "main > div",
           "article[class*='content']",
           "[role='main'] article",
           "[role='main'] section",
+          "[role='main']",
+          "main",
         ];
 
         for (const selector of mainSelectors) {
@@ -475,17 +563,19 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
             const count = await element.count();
             if (count > 0) {
               const text = await element.innerText().catch(() => "");
-              if (text && text.length > 300) {
-                // Check quality
+              if (text && text.length > minLength) {
+                // Check quality - be more lenient
                 const lowerText = text.toLowerCase();
                 const jobKeywordCount = [
                   "responsibilities", "requirements", "qualifications",
-                  "experience", "skills", "about", "role", "position"
+                  "experience", "skills", "about", "role", "position",
+                  "what you'll", "looking for"
                 ].filter(kw => lowerText.includes(kw)).length;
                 
-                if (jobKeywordCount >= 2) {
+                // Accept if has keywords OR if substantial length
+                if (jobKeywordCount >= 1 || text.length > 600) {
                   descriptionText = text.trim();
-                  console.log(`  ✓ Found description from main content (${descriptionText.length} chars)`);
+                  console.log(`  ✓ Found description from main content (${descriptionText.length} chars, ${jobKeywordCount} keywords)`);
                   break;
                 }
               }
@@ -571,21 +661,32 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
     }
 
     // Final validation: ensure we have a substantial, quality description
-    if (descriptionText && descriptionText.length >= 300) {
+    // Be more lenient - accept if substantial length OR has job keywords
+    const minFinalLength = 200;
+    if (descriptionText && descriptionText.length >= minFinalLength) {
       const lowerText = descriptionText.toLowerCase();
       const hasJobContent = 
         lowerText.includes("responsibilities") ||
         lowerText.includes("requirements") ||
         lowerText.includes("qualifications") ||
         lowerText.includes("experience") ||
-        (lowerText.includes("skills") && lowerText.length > 500);
+        lowerText.includes("skills") ||
+        lowerText.includes("about") ||
+        lowerText.includes("role") ||
+        lowerText.includes("position") ||
+        lowerText.includes("what you'll") ||
+        lowerText.includes("looking for") ||
+        descriptionText.length > 500; // Accept if just long enough
       
       if (hasJobContent) {
+        console.log(`  ✅ Extracted description (${descriptionText.length} chars, quality check passed)`);
         return descriptionText;
+      } else {
+        console.warn(`  ⚠️  Description found (${descriptionText.length} chars) but failed quality check`);
       }
     }
 
-    console.warn("  ⚠️  Could not extract substantial job description");
+    console.warn(`  ⚠️  Could not extract substantial job description (found ${descriptionText.length} chars, need ${minFinalLength}+)`);
     return "";
   } catch (e) {
     console.warn(`  ⚠️  Error extracting job description: ${e}`);

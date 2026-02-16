@@ -18,51 +18,113 @@ type Job = {
 export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
   const [jobs, setJobs] = useState(initialJobs);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState({ title: "", company: "", externalUrl: "" });
+  const [editForm, setEditForm] = useState({ 
+    title: "", 
+    company: "", 
+    externalUrl: "",
+    description: ""
+  });
   const [dateFilter, setDateFilter] = useState<string>("all"); // "all", "today", "week", "month"
   const [descriptionFilter, setDescriptionFilter] = useState<string>("all"); // "all", "with", "without"
-  const [viewingDescriptionId, setViewingDescriptionId] = useState<number | null>(null);
-  const [descriptionText, setDescriptionText] = useState<string>("");
-  const [loadingDescription, setLoadingDescription] = useState(false);
+  const [loadingEditForm, setLoadingEditForm] = useState(false);
+  const [savingEditForm, setSavingEditForm] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanStatus, setScanStatus] = useState<string>("");
+  const [scanCount, setScanCount] = useState<number>(5); // Default to 5 jobs
 
-  const handleEdit = (job: Job) => {
+  const handleEdit = async (job: Job) => {
     setEditingId(job.id);
+    setLoadingEditForm(true);
+    
+    // Load job data
     setEditForm({
       title: job.title,
       company: job.company,
       externalUrl: job.externalUrl,
+      description: "",
     });
+
+    // Load job description if it exists
+    try {
+      const response = await fetch(`/api/jobs/${job.id}/description`);
+      if (response.ok) {
+        const data = await response.json();
+        setEditForm(prev => ({ ...prev, description: data.fullText || "" }));
+      }
+    } catch (error) {
+      // Description doesn't exist or error loading - leave empty
+    } finally {
+      setLoadingEditForm(false);
+    }
   };
 
   const handleSave = async (id: number) => {
+    setSavingEditForm(true);
     try {
-      const response = await fetch(`/api/jobs/${id}`, {
+      // Save job metadata
+      const jobResponse = await fetch(`/api/jobs/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify({
+          title: editForm.title,
+          company: editForm.company,
+          externalUrl: editForm.externalUrl,
+        }),
       });
 
-      if (response.ok) {
-        const updated = await response.json();
-        setJobs(jobs.map((j) => (j.id === id ? updated : j)));
-        setEditingId(null);
-      } else {
-        alert("Failed to update job");
+      if (!jobResponse.ok) {
+        throw new Error("Failed to update job");
       }
-    } catch (error) {
-      alert("Error updating job");
+
+      const updated = await jobResponse.json();
+
+      // Save job description
+      if (editForm.description.trim()) {
+        try {
+          const descResponse = await fetch(`/api/jobs/${id}/description`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fullText: editForm.description }),
+          });
+
+          if (!descResponse.ok) {
+            console.warn("Failed to update description, but job was updated");
+          }
+        } catch (error) {
+          console.warn("Error updating description:", error);
+        }
+      }
+
+      // Update local state
+      setJobs(jobs.map((j) => 
+        j.id === id 
+          ? { ...updated, hasDescription: editForm.description.trim().length > 0, hasResume: j.hasResume, hasCoverLetter: j.hasCoverLetter }
+          : j
+      ));
+      setEditingId(null);
+      alert("✅ Job updated successfully");
+    } catch (error: any) {
+      alert(`❌ Failed to update job: ${error.message || "Unknown error"}`);
+    } finally {
+      setSavingEditForm(false);
     }
   };
 
   const handleCancel = () => {
     setEditingId(null);
-    setEditForm({ title: "", company: "", externalUrl: "" });
+    setEditForm({ title: "", company: "", externalUrl: "", description: "" });
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this job?")) return;
+    const job = jobs.find((j) => j.id === id);
+    if (!job) return;
+
+    const hasDocs = job.hasResume || job.hasCoverLetter || job.hasDescription;
+    const confirmMessage = hasDocs
+      ? `Are you sure you want to delete "${job.title}" at ${job.company}?\n\nThis will delete:\n- Job application\n- Job description\n- Generated resumes\n- Generated cover letters\n- All related files\n\nThis action cannot be undone.`
+      : `Are you sure you want to delete "${job.title}" at ${job.company}?\n\nThis action cannot be undone.`;
+
+    if (!confirm(confirmMessage)) return;
 
     try {
       const response = await fetch(`/api/jobs/${id}`, {
@@ -71,11 +133,13 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
 
       if (response.ok) {
         setJobs(jobs.filter((j) => j.id !== id));
+        alert("✅ Job and all related data deleted successfully");
       } else {
-        alert("Failed to delete job");
+        const error = await response.json();
+        alert(`❌ Failed to delete job: ${error.error || "Unknown error"}`);
       }
-    } catch (error) {
-      alert("Error deleting job");
+    } catch (error: any) {
+      alert(`❌ Error deleting job: ${error.message || "Unknown error"}`);
     }
   };
 
@@ -122,56 +186,74 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
     return filtered;
   }, [jobs, dateFilter, descriptionFilter]);
 
-  // View job description
-  const handleViewDescription = async (jobId: number) => {
-    setLoadingDescription(true);
-    setViewingDescriptionId(jobId);
-    try {
-      const response = await fetch(`/api/jobs/${jobId}/description`);
-      if (response.ok) {
-        const data = await response.json();
-        setDescriptionText(data.fullText || "No description available");
-      } else {
-        setDescriptionText("Description not found");
-      }
-    } catch (error) {
-      setDescriptionText("Error loading description");
-    } finally {
-      setLoadingDescription(false);
-    }
-  };
 
-  const handleCloseDescription = () => {
-    setViewingDescriptionId(null);
-    setDescriptionText("");
-  };
 
   // Trigger job scan
   const handleScanJobs = async () => {
     if (scanning) return;
     
     setScanning(true);
-    setScanStatus("Starting scan...");
+    setScanStatus(`Starting scan for ${scanCount} jobs...`);
+    
+    // Store initial job count to track progress
+    const initialJobCount = jobs.length;
+    let lastJobCount = initialJobCount;
+    
+    // Poll for new jobs every 3 seconds while scanning
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch("/api/jobs");
+        if (response.ok) {
+          const newJobs = await response.json();
+          const currentCount = newJobs.length;
+          
+          if (currentCount > lastJobCount) {
+            const newJobsCount = currentCount - lastJobCount;
+            setScanStatus(`⏳ Scanning... Found ${newJobsCount} new job(s) (${currentCount - initialJobCount} total so far)`);
+            // Update jobs list without full page reload
+            setJobs(newJobs.map((job: any) => ({
+              ...job,
+              hasDescription: !!job.jobDescription,
+              hasResume: job.tailoredResumes?.length > 0,
+              hasCoverLetter: job.coverLetters?.length > 0,
+            })));
+            lastJobCount = currentCount;
+          }
+        }
+      } catch (error) {
+        // Ignore polling errors
+      }
+    }, 3000);
     
     try {
       const response = await fetch("/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          maxJobs: scanCount,
+          autoGenerateDocuments: true, // Keep default behavior
+        }),
       });
       
       const result = await response.json();
       
+      // Stop polling
+      clearInterval(pollInterval);
+      
       if (result.success) {
-        setScanStatus("✅ Scan completed! Refreshing jobs...");
-        // Refresh the page to show new jobs
+        const finalCount = lastJobCount - initialJobCount;
+        setScanStatus(`✅ Scan completed! Processed ${finalCount} job(s). Refreshing...`);
+        // Final refresh to get all updates
         setTimeout(() => {
           window.location.reload();
-        }, 2000);
+        }, 1000);
       } else {
+        clearInterval(pollInterval);
         setScanStatus(`❌ Scan failed: ${result.message}`);
         setScanning(false);
       }
     } catch (error) {
+      clearInterval(pollInterval);
       setScanStatus("❌ Error starting scan");
       setScanning(false);
     }
@@ -179,29 +261,68 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
 
   // Export to CSV
   const handleExportCSV = () => {
-    const headers = ["Date", "Job Title", "Company", "Match Score", "Site URL"];
+    // Headers matching the table structure
+    const headers = [
+      "Date",
+      "Company",
+      "Job Title",
+      "Site URL",
+      "Match Score",
+      "Description",
+      "Resume",
+      "Cover Letter",
+    ];
+
+    // Helper function to escape CSV values properly
+    const escapeCSV = (value: any): string => {
+      if (value === null || value === undefined) return "";
+      const stringValue = String(value);
+      // If contains comma, quote, or newline, wrap in quotes and escape quotes
+      if (stringValue.includes(",") || stringValue.includes('"') || stringValue.includes("\n")) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+      return stringValue;
+    };
+
     const rows = filteredJobs.map((job) => [
-      new Date(job.createdAt).toLocaleDateString(),
-      job.title,
+      new Date(job.createdAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }),
       job.company,
-      job.jobrightMatchScore ? `${job.jobrightMatchScore}%` : "N/A",
+      job.title,
       job.externalUrl,
+      job.jobrightMatchScore ? `${job.jobrightMatchScore}%` : "N/A",
+      job.hasDescription ? "Yes" : "No",
+      job.hasResume ? "Yes" : "No",
+      job.hasCoverLetter ? "Yes" : "No",
     ]);
 
+    // Build CSV content with proper escaping
     const csvContent = [
-      headers.join(","),
-      ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")),
+      headers.map(escapeCSV).join(","),
+      ...rows.map((row) => row.map(escapeCSV).join(",")),
     ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    // Add BOM for Excel compatibility (UTF-8 BOM)
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
+    
+    // Generate filename with date filter and timestamp
+    const dateStr = new Date().toISOString().split("T")[0];
+    const filterStr = dateFilter === "all" ? "all" : dateFilter;
+    link.setAttribute("download", `job-applications-${filterStr}-${dateStr}.csv`);
     link.setAttribute("href", url);
-    link.setAttribute("download", `job-applications-${dateFilter}-${new Date().toISOString().split("T")[0]}.csv`);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // Clean up
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   };
 
   return (
@@ -262,7 +383,31 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
             ({filteredJobs.length} {filteredJobs.length === 1 ? "job" : "jobs"})
           </span>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <label htmlFor="scanCount" style={{ fontWeight: 500, fontSize: "0.875rem" }}>
+              Jobs to scan:
+            </label>
+            <select
+              id="scanCount"
+              value={scanCount}
+              onChange={(e) => setScanCount(Number(e.target.value))}
+              disabled={scanning}
+              style={{
+                padding: "0.5rem",
+                border: "1px solid #d1d5db",
+                borderRadius: "4px",
+                fontSize: "0.875rem",
+                backgroundColor: scanning ? "#f3f4f6" : "white",
+                cursor: scanning ? "not-allowed" : "pointer",
+              }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={30}>30</option>
+            </select>
+          </div>
           <button
             onClick={handleScanJobs}
             disabled={scanning}
@@ -329,11 +474,11 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
         <thead style={{ backgroundColor: "#f3f4f6" }}>
           <tr>
             <th style={{ textAlign: "left", padding: "0.75rem" }}>Date</th>
-            <th style={{ textAlign: "left", padding: "0.75rem" }}>Job Title</th>
             <th style={{ textAlign: "left", padding: "0.75rem" }}>Company</th>
-            <th style={{ textAlign: "left", padding: "0.75rem" }}>Match Score</th>
-            <th style={{ textAlign: "left", padding: "0.75rem" }}>Docs</th>
+            <th style={{ textAlign: "left", padding: "0.75rem" }}>Job Title</th>
             <th style={{ textAlign: "left", padding: "0.75rem" }}>Site URL</th>
+            <th style={{ textAlign: "left", padding: "0.75rem" }}>Docs</th>
+            <th style={{ textAlign: "left", padding: "0.75rem" }}>Match Score</th>
             <th style={{ textAlign: "left", padding: "0.75rem" }}>Actions</th>
           </tr>
         </thead>
@@ -345,42 +490,69 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
               {new Date(job.createdAt).toLocaleDateString()}
             </td>
 
-            {/* Job Title */}
-            <td style={{ padding: "0.75rem" }}>
-              {editingId === job.id ? (
-                <input
-                  type="text"
-                  value={editForm.title}
-                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "4px",
-                  }}
-                />
-              ) : (
-                job.title
-              )}
-            </td>
-
             {/* Company */}
             <td style={{ padding: "0.75rem" }}>
-              {editingId === job.id ? (
-                <input
-                  type="text"
-                  value={editForm.company}
-                  onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+              {job.company}
+            </td>
+
+            {/* Job Title */}
+            <td style={{ padding: "0.75rem" }}>
+              {job.title}
+            </td>
+
+            {/* Site URL */}
+            <td style={{ padding: "0.75rem" }}>
+              <Link
+                href={job.externalUrl}
+                target="_blank"
+                style={{ color: "#2563eb", textDecoration: "underline" }}
+              >
+                {job.externalUrl.length > 50
+                  ? `${job.externalUrl.substring(0, 50)}...`
+                  : job.externalUrl}
+              </Link>
+            </td>
+
+            {/* Docs status: description / resume / cover letter (colored circles) */}
+            <td style={{ padding: "0.75rem" }}>
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                {/* Description circle */}
+                <div
+                  title={job.hasDescription ? "Description exists" : "Description missing"}
                   style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "4px",
+                    width: "12px",
+                    height: "12px",
+                    borderRadius: "50%",
+                    backgroundColor: job.hasDescription ? "#10b981" : "#ef4444",
+                    border: "1px solid",
+                    borderColor: job.hasDescription ? "#059669" : "#dc2626",
                   }}
                 />
-              ) : (
-                job.company
-              )}
+                {/* Resume circle */}
+                <div
+                  title={job.hasResume ? "Resume exists" : "Resume missing"}
+                  style={{
+                    width: "12px",
+                    height: "12px",
+                    borderRadius: "50%",
+                    backgroundColor: job.hasResume ? "#10b981" : "#ef4444",
+                    border: "1px solid",
+                    borderColor: job.hasResume ? "#059669" : "#dc2626",
+                  }}
+                />
+                {/* Cover Letter circle */}
+                <div
+                  title={job.hasCoverLetter ? "Cover letter exists" : "Cover letter missing"}
+                  style={{
+                    width: "12px",
+                    height: "12px",
+                    borderRadius: "50%",
+                    backgroundColor: job.hasCoverLetter ? "#10b981" : "#ef4444",
+                    border: "1px solid",
+                    borderColor: job.hasCoverLetter ? "#059669" : "#dc2626",
+                  }}
+                />
+              </div>
             </td>
 
             {/* Match Score */}
@@ -412,157 +584,45 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
                 <span style={{ color: "#9ca3af" }}>N/A</span>
               )}
             </td>
-
-            {/* Docs status: resume / cover letter / description */}
             <td style={{ padding: "0.75rem" }}>
-              <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
-                <span
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <button
+                  onClick={() => handleEdit(job)}
                   style={{
-                    padding: "0.15rem 0.5rem",
-                    borderRadius: "999px",
-                    fontSize: "0.75rem",
-                    fontWeight: 500,
-                    backgroundColor: job.hasResume ? "#dcfce7" : "#f3f4f6",
-                    color: job.hasResume ? "#166534" : "#6b7280",
-                    border: job.hasResume ? "1px solid #bbf7d0" : "1px solid #e5e7eb",
-                  }}
-                >
-                  Resume
-                </span>
-                <span
-                  style={{
-                    padding: "0.15rem 0.5rem",
-                    borderRadius: "999px",
-                    fontSize: "0.75rem",
-                    fontWeight: 500,
-                    backgroundColor: job.hasCoverLetter ? "#dbeafe" : "#f3f4f6",
-                    color: job.hasCoverLetter ? "#1d4ed8" : "#6b7280",
-                    border: job.hasCoverLetter ? "1px solid #bfdbfe" : "1px solid #e5e7eb",
-                  }}
-                >
-                  Cover
-                </span>
-                <span
-                  style={{
-                    padding: "0.15rem 0.5rem",
-                    borderRadius: "999px",
-                    fontSize: "0.75rem",
-                    fontWeight: 500,
-                    backgroundColor: job.hasDescription ? "#f5f3ff" : "#f3f4f6",
-                    color: job.hasDescription ? "#6d28d9" : "#6b7280",
-                    border: job.hasDescription ? "1px solid #ddd6fe" : "1px solid #e5e7eb",
-                  }}
-                >
-                  Desc
-                </span>
-              </div>
-            </td>
-            <td style={{ padding: "0.75rem" }}>
-              {editingId === job.id ? (
-                <input
-                  type="text"
-                  value={editForm.externalUrl}
-                  onChange={(e) => setEditForm({ ...editForm, externalUrl: e.target.value })}
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    border: "1px solid #d1d5db",
+                    padding: "0.25rem 0.75rem",
+                    backgroundColor: "#3b82f6",
+                    color: "white",
+                    border: "none",
                     borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "0.875rem",
                   }}
-                />
-              ) : (
-                <Link
-                  href={job.externalUrl}
-                  target="_blank"
-                  style={{ color: "#2563eb", textDecoration: "underline" }}
                 >
-                  {job.externalUrl.length > 50
-                    ? `${job.externalUrl.substring(0, 50)}...`
-                    : job.externalUrl}
-                </Link>
-              )}
-            </td>
-            <td style={{ padding: "0.75rem" }}>
-              {editingId === job.id ? (
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <button
-                    onClick={() => handleSave(job.id)}
-                    style={{
-                      padding: "0.25rem 0.75rem",
-                      backgroundColor: "#10b981",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    style={{
-                      padding: "0.25rem 0.75rem",
-                      backgroundColor: "#6b7280",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <button
-                    onClick={() => handleViewDescription(job.id)}
-                    style={{
-                      padding: "0.25rem 0.75rem",
-                      backgroundColor: "#8b5cf6",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    View Description
-                  </button>
-                  <button
-                    onClick={() => handleEdit(job)}
-                    style={{
-                      padding: "0.25rem 0.75rem",
-                      backgroundColor: "#3b82f6",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(job.id)}
-                    style={{
-                      padding: "0.25rem 0.75rem",
-                      backgroundColor: "#ef4444",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(job.id)}
+                  style={{
+                    padding: "0.25rem 0.75rem",
+                    backgroundColor: "#ef4444",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
             </td>
           </tr>
         ))}
       </tbody>
     </table>
 
-    {/* Description Modal */}
-    {viewingDescriptionId && (
+    {/* Edit Job Modal */}
+    {editingId && (
       <div
         style={{
           position: "fixed",
@@ -576,54 +636,161 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
           justifyContent: "center",
           zIndex: 1000,
         }}
-        onClick={handleCloseDescription}
+        onClick={handleCancel}
       >
         <div
           style={{
             backgroundColor: "white",
             borderRadius: "8px",
             padding: "2rem",
-            maxWidth: "800px",
-            maxHeight: "80vh",
+            maxWidth: "900px",
+            maxHeight: "90vh",
             width: "90%",
-            overflow: "auto",
+            display: "flex",
+            flexDirection: "column",
             boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            overflow: "hidden",
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-            <h2 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 600 }}>Job Description</h2>
-            <button
-              onClick={handleCloseDescription}
-              style={{
-                background: "none",
-                border: "none",
-                fontSize: "1.5rem",
-                cursor: "pointer",
-                color: "#6b7280",
-              }}
-            >
-              ×
-            </button>
-          </div>
-          {loadingDescription ? (
-            <p>Loading description...</p>
+          <h2 style={{ marginTop: 0, marginBottom: "1.5rem", fontSize: "1.5rem", fontWeight: 600 }}>
+            Edit Job Application
+          </h2>
+          
+          {loadingEditForm ? (
+            <div style={{ padding: "2rem", textAlign: "center" }}>Loading...</div>
           ) : (
-            <div
-              style={{
-                whiteSpace: "pre-wrap",
-                lineHeight: "1.6",
-                color: "#374151",
-                maxHeight: "60vh",
-                overflow: "auto",
-              }}
-            >
-              {descriptionText || "No description available"}
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem", overflow: "auto", flex: 1 }}>
+              {/* Job Title */}
+              <div>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500, fontSize: "0.875rem" }}>
+                  Job Title *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "4px",
+                    fontSize: "0.875rem",
+                  }}
+                  placeholder="Enter job title"
+                />
+              </div>
+
+              {/* Company */}
+              <div>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500, fontSize: "0.875rem" }}>
+                  Company *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.company}
+                  onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "4px",
+                    fontSize: "0.875rem",
+                  }}
+                  placeholder="Enter company name"
+                />
+              </div>
+
+              {/* External URL */}
+              <div>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500, fontSize: "0.875rem" }}>
+                  Application URL *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.externalUrl}
+                  onChange={(e) => setEditForm({ ...editForm, externalUrl: e.target.value })}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "4px",
+                    fontSize: "0.875rem",
+                  }}
+                  placeholder="Enter application URL"
+                />
+              </div>
+
+              {/* Job Description */}
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "300px" }}>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500, fontSize: "0.875rem" }}>
+                  Job Description
+                </label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  placeholder="Enter job description..."
+                  style={{
+                    width: "100%",
+                    minHeight: "300px",
+                    padding: "1rem",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "4px",
+                    fontSize: "0.875rem",
+                    fontFamily: "monospace",
+                    resize: "vertical",
+                    flex: 1,
+                  }}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", justifyContent: "flex-end" }}>
+                <button
+                  onClick={handleCancel}
+                  disabled={savingEditForm}
+                  style={{
+                    padding: "0.5rem 1.5rem",
+                    backgroundColor: "#6b7280",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: savingEditForm ? "not-allowed" : "pointer",
+                    opacity: savingEditForm ? 0.6 : 1,
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleSave(editingId)}
+                  disabled={savingEditForm || !editForm.title || !editForm.company || !editForm.externalUrl}
+                  style={{
+                    padding: "0.5rem 1.5rem",
+                    backgroundColor: savingEditForm || !editForm.title || !editForm.company || !editForm.externalUrl
+                      ? "#9ca3af"
+                      : "#10b981",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: savingEditForm || !editForm.title || !editForm.company || !editForm.externalUrl
+                      ? "not-allowed"
+                      : "pointer",
+                    opacity: savingEditForm || !editForm.title || !editForm.company || !editForm.externalUrl ? 0.6 : 1,
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  {savingEditForm ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
             </div>
           )}
         </div>
       </div>
     )}
+
     </div>
   );
 }

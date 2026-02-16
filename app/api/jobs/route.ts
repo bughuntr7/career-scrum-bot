@@ -11,9 +11,40 @@ export async function GET(req: NextRequest) {
   const jobs = await prisma.jobApplication.findMany({
     where: userId ? { userId } : undefined,
     orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      company: true,
+      externalUrl: true,
+      createdAt: true,
+      jobrightMatchScore: true,
+      jobDescription: {
+        select: {
+          id: true,
+        },
+      },
+      tailoredResumes: {
+        select: {
+          id: true,
+        },
+      },
+      coverLetters: {
+        select: {
+          id: true,
+        },
+      },
+    },
   });
 
-  return new Response(JSON.stringify(jobs), {
+  // Add flags to match page.tsx structure
+  const jobsWithFlags = jobs.map((job) => ({
+    ...job,
+    hasDescription: !!job.jobDescription,
+    hasResume: job.tailoredResumes.length > 0,
+    hasCoverLetter: job.coverLetters.length > 0,
+  }));
+
+  return new Response(JSON.stringify(jobsWithFlags), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });

@@ -19,7 +19,15 @@ export async function POST(
       );
     }
 
-    const body = await req.json();
+    let body: any = {};
+    try {
+      const bodyText = await req.text();
+      if (bodyText) {
+        body = JSON.parse(bodyText);
+      }
+    } catch (e) {
+      // Use defaults if body parsing fails
+    }
 
     const options = {
       model: body.model || "gpt-4",
