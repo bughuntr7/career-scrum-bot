@@ -958,13 +958,22 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
       console.warn(`  ⚠️  Could not extract substantial job description (found ${descriptionText ? descriptionText.length : 0} chars, need ${minFinalLength}+)`);
       return "";
     }
+    
+    // Return the description if we got here (shouldn't happen, but TypeScript needs it)
+    return descriptionText || "";
   } catch (e) {
     console.warn(`  ⚠️  Error extracting job description: ${e}`);
     return "";
   }
 }
 
-async function clickApplyAndCaptureUrl(context: BrowserContext, page: Page, card: any): Promise<{ url: string; description: string } | null> {
+async function clickApplyAndCaptureUrl(
+  context: BrowserContext,
+  page: Page,
+  card: any,
+  options?: { captureDescription?: boolean }
+): Promise<{ url: string; description: string } | null> {
+  const captureDescription = options?.captureDescription !== false;
   // Scroll the card into view first - this is critical
   try {
     await card.scrollIntoViewIfNeeded();
@@ -1291,9 +1300,25 @@ async function clickApplyAndCaptureUrl(context: BrowserContext, page: Page, card
       return null; // Signal to caller that this job should be skipped
     }
 
-    // Extract job description from the external page BEFORE closing it
-    console.log("  📝 Extracting job description from fully loaded page...");
-    const description = await extractJobDescription(targetPage);
+    // Skip Lever.co URLs completely - we don't want to store or process them
+    if (url.toLowerCase().includes("jobs.lever.co") || url.toLowerCase().includes("lever.co")) {
+      console.log(`  ⏭️  Skipping Lever.co URL entirely (will not save job): ${url}`);
+      if (targetPage !== page) {
+        await targetPage.close().catch(() => {});
+      }
+      // Return to Jobright and dismiss modal so the card is marked as processed
+      await page.bringToFront();
+      await page.waitForTimeout(500);
+      await dismissApplyModal(page);
+      return null; // Signal to caller that this job should be skipped
+    }
+
+    // Optionally extract job description from the external page BEFORE closing it
+    let description = "";
+    if (captureDescription) {
+      console.log("  📝 Extracting job description from fully loaded page...");
+      description = await extractJobDescription(targetPage);
+    }
     
     if (targetPage !== page) {
       await targetPage.close().catch(() => {});
@@ -1857,26 +1882,30 @@ async function main() {
       try {
         // Ensure we're on the recommend page
         if (page.url().includes("jobright.ai/jobs/recommend")) {
-          await page.reload({ waitUntil: "networkidle", timeout: 60000 });
+          // Use domcontentloaded instead of networkidle to avoid timeout issues
+          // The page visually refreshes but networkidle may never fire if there are ongoing requests
+          await page.reload({ waitUntil: "domcontentloaded", timeout: 30000 });
           await page.waitForTimeout(3000); // Wait for cards to load
-          console.log(`  ✅ Page refreshed, re-fetching job cards...`);
-          // Reset card index and get fresh cards
+          console.log(`  ✅ Page refreshed, re-fetching job cards and starting from first card...`);
+          // Reset card index to start from the beginning after refresh
           cardIndex = 0;
           consecutiveSkips = 0; // Reset skip counter after refresh
-          continue; // Restart the loop with fresh cards
+          continue; // Restart the loop - will re-fetch cards at the top of the loop
         } else {
           // Navigate to recommend page if we're not there
           await safeNavigate(page, JOBRIGHT_RECOMMEND_URL, { maxRetries: 2, waitAfter: 3000 });
+          console.log(`  ✅ Navigated to recommend page, re-fetching job cards and starting from first card...`);
           cardIndex = 0;
           consecutiveSkips = 0;
           continue;
         }
       } catch (refreshError: any) {
         console.warn(`  ⚠️  Failed to refresh page: ${refreshError.message}`);
-        // If refresh fails, continue with normal skip logic
-        cardIndex++;
-        skippedCount++;
-        continue;
+        // If refresh fails, try to continue anyway - maybe cards will load on next iteration
+        cardIndex = 0; // Still reset to start from beginning
+        consecutiveSkips = 0;
+        await page.waitForTimeout(2000); // Brief wait before retrying
+        continue; // Restart loop to re-fetch cards
       }
     }
     
@@ -1887,9 +1916,17 @@ async function main() {
     
     const meta = await extractCardMetadata(card);
     
-    // Skip jobs with low match score
+    // Skip jobs with low match score, but still click apply and mark as applied
     if (typeof meta.matchScore === "number" && !isNaN(meta.matchScore) && meta.matchScore < MATCH_SCORE_THRESHOLD) {
       console.log(`  ⏭️  Skipping due to low match score: ${meta.matchScore}% < ${MATCH_SCORE_THRESHOLD}%`);
+      console.log("  👉 Still clicking Apply and 'Yes, I applied' to remove this card from Recommended, without saving to DB.");
+      try {
+        // Click apply and handle navigation/modal, but don't extract description
+        await clickApplyAndCaptureUrl(context, page, card, { captureDescription: false });
+      } catch (e: any) {
+        console.warn(`  ⚠️  Error while trying to click apply for low-score job: ${e.message || e}`);
+      }
+      // Move on to next card without storing anything in the database
       cardIndex++;
       skippedCount++;
       continue;
