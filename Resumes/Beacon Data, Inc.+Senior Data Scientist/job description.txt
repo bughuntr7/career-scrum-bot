@@ -1,0 +1,116 @@
+Senior Data Scientist
+Salt Lake City, Utah (Remote)
+JOB LOCATION
+This is a fully remote position (U.S.-based only).
+
+
+
+THE ROLE: SENIOR DATA SCIENTIST
+
+We're looking for a Senior Data Scientist to lead complex client engagements, design end-to-end analytics and machine learning solutions, and mentor other data scientists. This role blends deep technical expertise with strong client leadership—you'll own problem framing, solution design, and delivery while helping clients understand what to do next with their data.
+
+
+
+
+
+ABOUT BEACON DATA
+
+As a full-stack data and growth consulting firm, Beacon leverages machine and human intelligence to help clients achieve breakthrough performance. Organizations don't just call us to architect smart data strategy – they call us to implement it. As their expert data partner, our cross-functional team parachutes in to optimize data environments, unify fragmented data, and operationalize AI/ML use cases that accelerate growth. At Beacon, impact goes beyond improving the bottom line: one in four of our clients are mission-based organizations.
+
+
+
+
+
+BEACON PROJECTS
+
+No Beacon project is ever the same; we work across multiple sectors, providing unique learning and leadership opportunities. Examples include:
+
+Stitching together tens of millions of airline customer records to boost loyalty program enrollment
+Predicting optimal inventory levels for a supply chain firm to reduce idle time
+Optimizing donor targeting for a leading children's hospital through advanced segmentation
+Architecting and implementing a modern data strategy for the largest online theater ticketing company
+Using ML/AI to optimize contact strategies and improve credit card debt recovery outcomes
+
+
+
+
+WHAT YOU'LL DO
+
+Lead discovery and exploratory analysis phases, including feature feasibility, data gaps, and tradeoff decisions that inform scope lock and delivery plans.
+Lead the design and delivery of advanced analytics and machine learning solutions for client business problems
+Translate ambiguous business questions into clear analytical approaches, models, and roadmaps
+Partner directly with client stakeholders (including senior leaders) to guide decisions and recommend next steps
+Partner with data engineering and DevOps to deploy scoring pipelines and APIs within client-controlled environments.
+Design explainable scoring outputs and reason codes that support operational adoption and executive trust.
+Lead recurring client meetings, clearly explaining technical concepts, tradeoffs, and results
+Work hands-on with data across the full lifecycle: extraction, modeling, analysis, experimentation, and production deployment
+Collaborate with data engineers, analytics engineers, and designers in a multidisciplinary, agile environment
+Build reusable data science assets, tools, and patterns that strengthen Beacon Data's internal capabilities
+Review code, provide technical guidance, and mentor junior team members
+Support experimentation and measurement efforts such as A/B testing and performance evaluation
+
+
+
+
+REQUIRED QUALIFICATIONS (MUST HAVES)
+
+Master's or Ph.D. in Applied Statistics, Econometrics, Computer Science, Machine Learning, Mathematics, Engineering, or a related quantitative field - or equivalent practical experience
+5+ years of professional experience applying statistical analysis, machine learning, and advanced analytics in a business or consulting environment
+3+ years of external client-facing technical consulting, including leadership, strategic oversight, and direct engagement with C-suite and senior executives (e.g., CIO, CTO, CFO, CEO)
+3+ years of experience leading or managing data science or analytics teams
+Advanced SQL skills; experience working in modern cloud-based data ecosystems (e.g., Snowflake, Redshift, BigQuery)
+Experience designing and delivering data science solutions within Azure-native environments, including Azure SQL–based pipelines and cloud-hosted APIs.
+Strong proficiency in at least one programming language: Python or R (Scala a plus)
+Proven experience applying data science techniques to real-world business problems
+Experience building predictive models designed for incremental or near–real-time scoring, with attention to latency, stability, and operational constraints
+Experience designing hybrid scoring systems that combine rules-based logic with predictive modeling.
+Demonstrated ability to clearly communicate complex technical concepts to non-technical audiences
+Strong experience validating models through backtesting, lift analysis, and stability testing, and communicating business impact to executive and non-technical stakeholders.
+Strong client-facing skills, including leading meetings, structuring solutions, and influencing decision-makers
+Ability to break down complex work into clear tasks and guide teams to execute effectively
+Proactive mindset around identifying follow-on opportunities and advising clients on what to do next
+
+
+
+
+PREFERRED QUALIFICATIONS (NICE TO HAVES)
+
+Familiarity with modern data platforms and tools (e.g., data warehouses, big data technologies, NoSQL databases)
+Familiarity with AutoML frameworks and the tradeoffs between automation, explainability, and model performance in enterprise settings.
+Understanding of data modeling and warehousing concepts (e.g., dimensional models, star schemas)
+Comfort working with structured, semi-structured, and unstructured data
+Comfortable owning technical and delivery tradeoffs in fixed-scope, milestone-based client engagements.
+Experience working in Unix/Linux environments and using the command line
+Prior experience in a consulting or professional services setting
+
+
+
+
+WHO YOU'LL WORK WITH
+
+You'll work closely with Beacon Data's senior technical leaders, project leads, and multidisciplinary client teams - including data engineers, analysts, and business stakeholders. This is a highly collaborative, client-facing role with frequent interaction across teams and direct engagement with C-suite and senior executives (e.g., CIO, CTO, CFO, CEO)
+
+
+
+
+
+WHO YOU ARE
+
+Collaborative, curious, and impact-driven
+Comfortable operating in ambiguity and taking ownership
+Thoughtful in how you challenge ideas and communicate tradeoffs
+Motivated by continuous learning, experimentation, and improvement
+Authentic, respectful, and values strong team relationships
+
+
+
+
+ADDITIONAL REQUIREMENTS
+
+Must be eligible to work in the United States
+Willing to travel periodically to client sites as needed
+
+
+
+
+Beacon Data is an equal opportunity employer. We value diverse perspectives and are committed to building an inclusive environment where everyone can do their best work.

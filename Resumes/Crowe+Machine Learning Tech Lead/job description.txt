@@ -1,0 +1,72 @@
+Your Journey at Crowe Starts Here:
+
+At Crowe, you can build a meaningful and rewarding career. With real flexibility to balance work with life moments, you’re trusted to deliver results and make an impact. We embrace you for who you are, care for your well-being, and nurture your career. Everyone has equitable access to opportunities for career growth and leadership. Over our 80-year history, delivering excellent service through innovation has been a core part of our DNA across our audit, tax, and consulting groups. That’s why we continuously invest in innovative ideas, such as AI-enabled insights and technology-powered solutions, to enhance our services. Join us at Crowe and embark on a career where you can help shape the future of our industry.
+
+Job Description:
+
+About Crowe AI
+Everything we do is about making the future of human work more purposeful. We do this by leveraging state-of-the-art machine learning, generative AI, modern architectures, and industry experts to create AI-powered solutions that transform the way we do business.
+
+Our world-class AI and ML professionals give Crowe the ability to capture and harness the power of data. A combination of Machine Learning Engineers and AI Platform and Infrastructure Engineers create and deploy AI functionality to solve complex problems. We focus on building scalable AI products, based on rigorous data exploration, validation via proof-of-concept buildout, and close partnership with subject matter experts across business areas. 
+
+The future is powered by AI, come build it with us.
+
+About the Team
+We foster good science. You are given the time and resources to build your expertise in your project and beyond; you will guide fellow MLEs and product stakeholders through your work.
+We want to make good scientists better. MLEs have plenty of options on the job market. We want to be one of the best. We have regular ethics and book club meetings, monthly lightning talks where team members teach each other, support for conferences, and weekly “10P” independent time for ongoing learning.
+We truly value work-life balance. Our distributed team offers unlimited PTO and a flexible work-from-home policy.
+About the Role
+As a Tech Lead in AI Products, your responsibilities will vary across the development lifecycle, and include providing solutions architecture and vision for existing solutions, supporting new feature development and testing, and preparing for release of high-quality, deployment-ready code.
+AI Product Tech Leads must have strong stakeholder-facing skills to translate business problems into AI solution designs, reference architectures, and implementation roadmaps.
+AI Product Tech Leads are responsible for architecting the transition of AI projects from Proof of Concept to robust, production-ready solutions that transform our business offerings.
+Conduct lightweight sprint planning and review sessions, prioritizing features and managing project timelines.
+Write, review, and ensure the quality of production-ready code, setting high standards for the team.
+You seek deep understanding and take ownership of the impact your technical decision-making has on driving costs for the firm and/or clients.
+Oversee the implementation of testing protocols, including smoke tests and unit tests, to maintain high-quality outputs, in collaboration with members of the AI Platform and Infrastructure engineers.
+Prepare and refine Service Level Agreements (SLAs) and release documentation in preparation for production deployment; collaborate with Enablement team to create user upskilling materials that support effective use and drive adoption of AI solutions and latest features.
+Lead ethical reviews and risk/security evaluations to ensure compliance and safeguard our solutions.
+Engage with business stakeholders and proactively identify big picture improvements that benefit the client, product, and/or development team.
+Act as a career coach, fostering the growth and development of 3+ team members through knowledge-sharing, constructive code review, and by setting the standard for code quality and research best practices.
+Willingness to travel domestically to meet client needs.
+Required Skills
+Programming experience. You’re experienced writing scalable, production-level code in Python. You’re familiar with Linux/UNIX systems.
+Machine learning experience. You’re proficient in machine learning packages, such as Tensorflow and Pytorch, and have proven expertise in designing/developing AI/ML models. You understand the mechanics of supporting ML solutions in a production environment and can help develop/maintain tests that validate functionality and evaluate model performance.
+GenAI Experience. Experience designing and implementing AI agents using large language models (LLMs), including prompt engineering, tool use, memory, and multi-agent orchestration patterns. Proficiency with modern AI/ML frameworks, tools, and agent platforms (e.g. MCP, A2A, Microsoft Foundry, OpenAI Agent SDK, Semantic Kernel, LangChain, LlamaIndex, Microsoft Copilot Studio, or equivalent). Knowledge of retrieval-augmented generation (RAG), vector databases, embeddings, and techniques for grounding model outputs in enterprise data.
+Software Experience. You’re familiar with the software development lifecycle, and ideally tenets of MLOps. You have exposure to CI/CD frameworks and tools like Docker and Git. You’re experienced deploying code in production environments.
+AI-Assisted Software Engineering: Demonstrated ability to embrace and advocate for AI-assisted software engineering practices, including the effective use of coding assistants (e.g. Claude Code), automated testing, and design-time AI tools to accelerate solution design, improve quality, and enhance developer productivity.
+Communication. Excellent communication skills, capable of effectively documenting and summarizing technical details for non-technical stakeholders.
+Agile experience. You’re experienced attending Scrum or Kanban meetings; you favor incremental, iterative improvements through regular releases, testing, and monitoring.
+Preferred Skills
+AI Agent Experience. Familiarity with evaluation, monitoring, and observability of AI agents, including guardrails, hallucination mitigation, and human-in-the-loop designs. Ability to translate business requirements into agent behaviors, decision logic, and measurable performance outcomes. Proven ability to design end-to-end AI architectures that integrate agents with enterprise systems (ERP, CRM, data platforms, APIs) using scalable, secure integration patterns.
+Cloud Experience: Experience designing and deploying AI/ML solutions on major cloud platforms (AWS, Azure, and/or GCP), including the use of managed AI services, cloud-native integration patterns, scalable data architectures, and secure, enterprise-grade deployments.
+Knowledge sharing. You enjoy sharing what you learn, whether by offering cross-training opportunities, giving internal team “lightning talks,” or by writing detailed comments on tickets when you close them.
+Curiosity about AI and machine learning. You want to stay fresh in AI and machine learning. You demonstrate curiosity and continuous learning mindset in Generative AI and applied machine learning, with an interest in staying current on emerging models, architectures, and techniques, including engaging with original research, technical papers, and pre-release concepts before they are broadly commercialized
+Professional Services experience. You’re familiar with the landscape of a professional services firm and interested in engaging with the unique value proposition of products associated with a diverse range of services, from advising and consulting to tax and public accounting.
+We appreciate talent from all over the United States and are willing to consider candidates who may not be located near a Crowe office location for this role/opening.
+ 
+
+#LI-Remote
+
+We expect the candidate to uphold Crowe’s values of Care, Trust, Courage, and Stewardship. These values define who we are. We expect all of our people to act ethically and with integrity at all times.
+
+In compliance with federal law, all persons hired will be required to verify identity and eligibility to work in the United States and to complete the required employment eligibility verification form upon hire. Crowe is not sponsoring for work authorization at this time.
+
+The wage range for this role takes into account the wide range of factors that are considered in making compensation decisions including but not limited to skill sets; experience and training; licensure and certifications; and other business and organizational needs. The disclosed range estimate has not been adjusted for the applicable geographic differential associated with the location at which the position may be filled. At Crowe, it is not typical for an individual to be hired at or near the top of the range for their role and compensation decisions are dependent on the facts and circumstances of each case. A reasonable estimate of the current range is $126,500.00 - $299,500.00 per year.
+Our Benefits:
+Your exceptional people experience starts here. At Crowe, we know that great people are what makes a great firm. We care about our people and offer employees a comprehensive total rewards package. Learn more about what working at Crowe can mean for you!
+
+
+How You Can Grow:
+We will nurture your talent in an inclusive culture that values diversity. You will have the chance to meet on a consistent basis with your Career Coach that will guide you in your career goals and aspirations. Learn more about where talent can prosper!
+
+More about Crowe:
+Crowe (www.crowe.com) is one of the largest public accounting, consulting and technology firms in the United States. Crowe uses its deep industry expertise to provide audit services to public and private entities while also helping clients reach their goals with tax, advisory, risk and performance services. Crowe is recognized by many organizations as one of the country's best places to work. Crowe serves clients worldwide as an independent member of Crowe Global, one of the largest global accounting networks in the world. The network consists of more than 200 independent accounting and advisory services firms in more than 130 countries around the world.
+
+Crowe LLP provides equal employment opportunities to all employees and applicants for employment and prohibits discrimination and harassment of any type without regard to race, color, religion, age, sex, sexual orientation, gender identity or expression, genetics, national origin, disability or protected veteran status, or any other characteristic protected by federal, state or local laws.
+
+Crowe LLP does not accept unsolicited candidates, referrals or resumes from any staffing agency, recruiting service, sourcing entity or any other third-party paid service at any time. Any referrals, resumes or candidates submitted to Crowe, or any employee or owner of Crowe without a pre-existing agreement signed by both parties covering the submission will be considered the property of Crowe, and free of charge.
+
+Crowe will consider for employment all qualified applicants, including those with criminal histories, in a manner consistent with the requirements of applicable state and local laws, including the City of Los Angeles’ Fair Chance Initiative for Hiring Ordinance, Los Angeles County Fair Chance Ordinance, San Francisco Fair Chance Ordinance, and the California Fair Chance Act.
+Please visit our webpage to see notices of the various state and local Ban-the-Box laws and Fair Chance Ordinances, where applicable.
+
+If you are interested in applying for employment with Crowe and are in need of an accommodation or require special assistance to navigate our website or to complete your application, please visit our Applicant Assistance and Accommodations page for more information: https://careers.crowe.com/crowe-applicant-assistance-and-accommodation

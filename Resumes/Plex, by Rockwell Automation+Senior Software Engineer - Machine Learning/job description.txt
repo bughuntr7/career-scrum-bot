@@ -1,0 +1,83 @@
+Senior Software Engineer - Machine Learning
+Engineering / Remote
+
+« Back to All Openings
+Job Overview:
+As a Senior Machine Learning Engineer you'll be responsible for driving forward personalization within Plex. You will take things from ideation to production by building and upgrading our recommender systems and optimizing existing models. This role also involves maintaining and improving the underlying tooling that allows us to serve machine learning models across the product.
+
+We are looking for a pragmatic, product-focused engineer with a passion for learning and an understanding of recommendation systems. Your work will have a direct impact on our users, making it significantly easier for them to find and enjoy the content they're looking for.
+
+What you'll do
+Build and upgrade our recommender systems.
+Maintain and improve our underlying tooling that lets us serve machine learning models across the product.
+Find areas of opportunity to drive the product forward with machine learning.
+Optimize and improve our existing machine learning models
+You will take things from ideation all the way through to production systems that the company relies on.
+What you bring to the table
+You have at least 5 years of experience building machine learning systems in production.
+You have worked on recommendation systems in the past and understand some of the intricacies of them.
+You have a passion for learning and keep reasonably up to date with the literature in the machine learning space.
+You've owned user-facing production systems and dealt with all the headaches that involves.
+You have worked with python, pytorch (or tensorflow) and have a solid understanding of SQL.
+You aren't afraid to get your hands dirty helping build data pipelines to get the data you need, or integrate your model into more traditional backend systems.
+You understand that not all problems require an ML-shaped hammer.
+You are kind, humble, helpful and enjoy getting stuff done
+You are intrinsically motivated, able to manage your time, and enjoy working with a distributed team across the globe
+You believe in asking for help and helping others when they ask, never throwing a problem over the wall
+You are hungry to have an impact, continuously working to improve our product, process and push the team to be its best
+Who we are
+Plex is a global streaming media platform that gives millions of customers around the world the freedom to enjoy all the content they love in one simple, beautiful app. Our vision is to empower real human connections by bringing people and entertainment together. So, we're on a mission to create a global community for streaming content that people can depend on to easily discover, experience, and share all of the entertainment that matters to them.
+
+What sets us apart
+We are the largest independent streaming platform built by a global team of employees who are fanatically passionate about delivering the highest quality, most unified, and user-friendliest entertainment experience possible.
+We have always been a distributed organization, with people making great things happen in over 20 different countries and 11 time zones. 
+We host epic in-person off-sites to bring team members together a few times a year. 
+We are passionate about our mission and we work hard, while still providing flexibility around a schedule that works for you.
+We love what we're building and our user community is an integral part of our development process. We actively engage with customers to understand what is working, what they want more of, and how we can be better.
+We are committed to improving the communities where we live and work with charitable contributions, partnerships, and service.
+Remote Work
+Plex hires new team members in countries around the world. 
+As such, Plex does not sponsor employment visas.
+All of our roles are remote, however some roles may carry specific location-based eligibility requirements. Our hiring team can help answer any questions about location after starting the recruiting process. 
+Also, please note, though we largely work asynchronously, as it relates to meetings, those generally occur between UTC 1600 to UTC 1900
+The Plex Values
+Be kind, humble, and helpful.
+Approach problems with curiosity, creativity, and flexibility.
+Put yourself on the customer's couch.
+Be a good steward. Like a boss!
+Build relationships to ensure healthy debate.
+Foster a global and diverse team spirit.
+Show gratitude and give back.
+Seek balance for yourself and Plex.
+Compensation
+Our compensation reflects the cost of labor across several US and Global geographic markets. The base pay for this position ranges from $130,000/year up to $160,000/year in our highest geographic market. Pay is based on a number of factors including market location, seniority, local currency and may vary depending on job-related knowledge, skills, and experience.
+
+Benefits
+Monthly Balance Wellness Stipend
+Productivity Stipend
+Flexible paid time off
+Paid parental leave
+Hardware stipend
+Flextime, work from anywhere
+Comprehensive health insurance
+Stock options
+401k (US employees)
+Plex for the Planet community service opportunities
+Diversity, Equity, and Inclusion at Plex
+At Plex, our vision is to empower real human connection by bringing people and entertainment together. This vision is at the heart of our diversity, equity and inclusion work. 
+
+As a fully remote, global company, we take pride in our ability and dedication to building a workforce that represents our global audience. Our virtual work environment is intentionally designed to draw from all backgrounds, creating a sense of belonging and ownership for every employee. 
+
+As we create a global community of streaming media, we know we need a team that represents the diversity of our users and a company culture that welcomes people to be their authentic selves, and we're all in!  
+
+Our DEI efforts are focused on the following:
+
+Building a diverse and global company
+Creating an inclusive culture
+Our DEI Foundations:
+
+Participation, Education and Awareness, Data and Understanding
+
+Does this sound interesting? We're looking for a Senior Software Engineer - Machine Learning who is ready to join us to have a material impact in Plex's growth and success!
+
+Plex is an Equal Employment Opportunity employer and is committed to building an inclusive and diverse workforce. We do not discriminate based on race, ethnicity, color, ancestry, national origin, religion, sexual orientation, gender identity, age, disability, veteran status, genetic information, marital status or any other classification protected by applicable discrimination laws. Should you require an accommodation during our interviewing and hiring process, please let your recruiter know. 

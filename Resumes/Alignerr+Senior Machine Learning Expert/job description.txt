@@ -1,0 +1,42 @@
+Senior Machine Learning Expert
+$60-80/hr
+Remote
+Freelance
+CODING
+Senior Machine Learning Engineer - AI Data Trainer
+Location: Remote
+About the job
+At Alignerr, we partner with the world's leading AI research teams and labs to build and train cutting-edge AI models.
+
+This project is about capturing how an LLM reasons and takes actions step by step to solve real tasks. Annotators write clear, structured traces that show planning, tool use, and decision making, creating data that trains models to reason more reliably in real world scenarios.
+
+Organization: Alignerr
+Position: Senior Machine Learning Engineer - AI Data Trainer
+Type: Hourly Contract
+Compensation: $60–$80 /hour
+Location: Remote
+Commitment: 10–40 hours/week
+
+What You'll Do:
+Lead the authorship of complex, high-fidelity reasoning traces for sophisticated technical tasks.
+Mentor and review structured traces to ensure optimal planning and tool-use documentation.
+Design data strategies that help LLMs navigate intricate real-world decision-making scenarios.
+Requirements:
+Significant experience in Machine Learning or related technical fields, with a focus on model reasoning.
+Proven ability to decompose complex problems into clear, logical, and documented steps.
+Experience with advanced LLM evaluation and training methodologies.
+Preferred:
+
+Prior experience with data annotation, data quality, or evaluation systems.
+Top-tier Kaggle competition results (e.g., Grandmaster/Master level), demonstrating a deep understanding of model performance and feature engineering.
+Why Join Us:
+Competitive pay and flexible remote work.
+Collaborate with a team working on cutting-edge AI projects.
+Exposure to advanced LLMs and how they're trained.
+Freelance perks: autonomy, flexibility, and global collaboration.
+Potential for contract extension.
+Application Process (Takes 15-20 min)
+Submit your resume
+Complete a short screening
+Project matching and onboarding
+PS: Our team reviews applications daily. Please complete your AI interview and application steps to be considered for this opportunity.

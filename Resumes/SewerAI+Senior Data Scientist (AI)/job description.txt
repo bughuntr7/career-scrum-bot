@@ -1,0 +1,103 @@
+Senior Data Scientist (AI)
+Location
+Remote
+
+Employment Type
+Full time
+
+Location Type
+Remote
+
+Department
+Engineering
+
+Compensation
+$150K – $180K
+Overview
+Application
+About SewerAI Corporation
+
+SewerAI is transforming underground infrastructure management through AI-powered inspection and risk analysis. Our platform helps contractors, engineering firms, and utilities unlock valuable insights from sewer inspection data—turning hours of manual video review into actionable intelligence in minutes. After doubling our customer base over the past year, we're now entering an exciting phase of accelerated growth.
+
+About the Role
+We're looking for a Senior Data Scientist to join our AI team and work on applied machine learning for sewer infrastructure. In this role, you'll develop anomaly detection systems, time series forecasting models, and predictive analytics that help utilities anticipate and prevent infrastructure failures.
+
+You'll work closely with our engineering and data teams to build ML systems that analyze sensor data, detect anomalies, and deliver actionable insights to our customers.
+
+What You'll Work On
+Anomaly Detection — Develop models to identify unusual patterns and potential issues in sewer infrastructure data
+
+Time Series Forecasting — Build predictive models for maintenance scheduling and infrastructure health predictions
+
+ML Model Development — Design, train, and iterate on ML models for sewer-specific applications
+
+Data Analysis & Pipelines — Build pipelines for processing and analyzing infrastructure data at scale
+
+Dashboards & Reporting — Create visualizations and reports in Hex to surface insights for stakeholders
+
+Required Technical Skills
+Python — Deep experience with pandas, scikit-learn, and statistical analysis
+
+Deep Learning Frameworks — PyTorch or TensorFlow for advanced modeling
+
+SQL — Complex queries, window functions, analytical queries
+
+Time Series Analysis — Forecasting techniques, trend analysis, seasonality handling, signal processing
+
+Anomaly Detection — Statistical and ML-based anomaly detection techniques
+
+Data Stack — Hex, dbt, ClickHouse
+
+Nice-to-Have Skills
+Infrastructure or IoT domain experience
+
+Sewer/Water industry experience or knowledge
+
+Sensor data analysis
+
+MLOps experience (model deployment, monitoring)
+
+Cloud platforms (AWS)
+
+What We're Looking For
+4-6 years of applied machine learning experience
+
+Strong statistical and ML fundamentals
+
+Experience with time series analysis or anomaly detection
+
+Knowledge of Bayesian statistics and/or Bayesian optimization
+
+Experience creating and applying custom metrics to complex datasets and problems
+
+Collaborative mindset — you enjoy working across teams
+
+Clear communicator — you can explain complex ML concepts to non-technical stakeholders
+
+What You'll Gain
+Impact — Your models directly improve infrastructure maintenance for cities and utilities
+
+Modern Stack — Work with a modern data and ML stack (Hex, dbt, ClickHouse, PyTorch)
+
+Growth — Expand your skills across applied ML in a high-impact domain
+
+Ownership — Shape the direction of our predictive analytics capabilities as we scale
+
+Compensation: $150,000-$180,000
+
+Benefits include:
+
+Medical, Dental, Vision, Basic Life, 401(k), and more
+
+Unlimited PTO
+
+Tools you need to get the job done
+
+Competitive salary and potential equity-based remuneration
+
+Why Join SewerAI?
+
+Join the fastest-growing team in wastewater tech and help modernize critical infrastructure with AI. You'll own high-visibility projects, influence how our brand meets the market, and see your work drive measurable impact for customers and communities.
+_______________________________________________________________________
+
+SewerAI is proud to be an Equal Opportunity Employer. We are committed to providing a workplace free from discrimination or harassment on the basis of age, disability, sex, race, religion or belief, gender reassignment, marriage/civil partnership, pregnancy/maternity, or sexual orientation. All your information will be kept confidential according to EEO guidelines.

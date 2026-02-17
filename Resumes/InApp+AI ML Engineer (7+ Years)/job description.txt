@@ -1,0 +1,68 @@
+AI ML Engineer (7+ Years)
+Project Location(s):
+Hybrid/Remote
+Share
+Facebook
+ 
+Twitter
+ 
+LinkedIn
+Experience: 7+ years in Python development with proven experience in AI and productivity tooling
+Notice Period: Immediate joiners
+Number of Openings: 1
+Working hours : 3 PM – 12 AM IST
+Job Summary
+We are seeking a Senior Python Developer who excels at building scalable, AI-integrated systems using modern tools and frameworks. The ideal candidate embraces AI-assisted development (GitHub Copilot, ChatGPT, AutoGen, etc.) to boost productivity, improve code quality, and drive innovation across our application stack. This role combines backend expertise, cloud-native architecture, and hands-on AI integration to deliver intelligent, high-performance solutions.
+
+Key Responsibilities
+AI Model Integration & Optimization
+
+Integrate APIs from multiple AI platforms (OpenAI, Anthropic, Gemini, Llama, Mistral, etc.) into scalable backend systems.
+Build multi-model orchestration layers balancing cost, latency, and accuracy.
+Fine-tune prompts, manage context windows, and implement RAG (Retrieval-Augmented Generation) solutions for domain-specific use cases.
+Optimize token usage, caching, and filtering strategies to enhance system efficiency and user experience.
+Application & System Development
+
+Design and implement AI-enabled workflows seamlessly integrated with web, mobile, or enterprise ecosystems.
+Develop Python-based backends and APIs using frameworks like FastAPI, Flask, or Django.
+Build and deploy microservices and cloud-native services leveraging Docker, Kubernetes, and serverless architectures
+Collaborate with frontend, DevOps, and product teams to ensure smooth feature delivery and deployment.
+Monitor and evaluate AI responses through metrics, evaluation frameworks, or RLHF-inspired feedback loops.
+Implement AI guardrails for responsible usage including bias detection, toxicity filtering, and compliance enforcement.
+Debug and resolve performance or reliability issues in AI-powered production systems.
+
+Innovation & Collaboration
+
+Stay up to date with the evolving AI model landscape, exploring new models, APIs, and orchestration frameworks.
+Experiment with multi-modal AI (vision, text, speech) for applicability in client scenarios.
+Work closely with cross-functional teams to translate business goals into intelligent, automated features.
+Primary Skills
+Python backend expert: FastAPI, async I/O, API design, testing.
+Production LLM integration: OpenAI/Anthropic/Gemini/Mistral; prompt and context strategies; RAG with a vector DB.
+Cloud-native delivery: Docker, AWS (preferred), CI/CD, IaC basics (Terraform or Pulumi).
+Data layer: SQL (PostgreSQL), caching/queues (Redis + Celery/RQ/SQS/Kafka).
+Daily AI-assisted development (Copilot/Others) for coding and tests.
+Required Skills & Qualifications
+Expert in Python backend development with hands-on experience integrating AI models, building cloud-native microservices, and using AI-assisted coding tools for faster, smarter development.
+Proven hands-on experience integrating LLM APIs (OpenAI, Claude, Gemini, Llama, etc.).
+Strong expertise in AI/ML frameworks (TensorFlow, PyTorch, scikit-learn, Hugging Face, etc.)” as essential qualification
+Practical knowledge of LangChain, LlamaIndex, Codium or similar frameworks for AI workflow orchestration.
+Understanding of prompt engineering, embeddings, vector databases (Pinecone, Weaviate, FAISS, pgvector), and RAG pipelines.
+Strong background in cloud platforms (AWS, GCP, Azure), containerization, and orchestration.
+Deep understanding of REST/GraphQL APIs, async programming, task queues, and caching mechanisms.
+Familiarity with SQL/NoSQL databases (PostgreSQL, MongoDB, Redis).
+Experience using AI-assisted tools such as GitHub Copilot, ChatGPT API, AutoGen, or OpenDevin for coding and testing automation.
+Exposure to CI/CD pipelines and Infrastructure as Code (Terraform, Pulumi).
+Knowledge of data preprocessing, NLP/NLU, and model evaluation techniques.
+Data Engineering & Processing, Data pipeline development , ETL/ELT processes, Batch processing and stream processing frameworks, Large-scale data handling with pandas, NumPy, Dask
+Preferred Skills
+Hands-on with multi-modal AI (vision, text-to-speech, speech-to-text).
+Experience with MLOps practices including CI/CD for AI pipelines, model monitoring, and drift detection.
+Background in fine-tuning, reinforcement learning, or custom model training.
+Familiarity with enterprise security standards (GDPR, HIPAA, SOC2).
+Contributions to open-source or personal AI-assisted coding initiatives.
+Soft Skills
+Excellent problem-solving and analytical thinking ability.
+Strong cross-functional collaboration and communication skills.
+Clear technical documentation habits.
+Curious, experimental mindset with a drive to explore the next frontier in AI-driven development.

@@ -1,0 +1,29 @@
+Senior AI / ML Engineer
+Job Category: AI/ML
+Job Type: Remote
+Job Location: PennsylvaniaPittsburgh
+Compensation: Depends on Experience
+Eligible Visa: GCGC-EADH4 EADL2SU.S. Citizen (USC)
+Job Description
+Visa Requirement:
+This position is open only to candidates authorized to work in the United States under the following categories: U.S. Citizen, Green Card Holder, GC-EAD, H-4 EAD, L-2s, L-2 EAD, or J-2 EAD. Candidates requiring other visa sponsorship are not eligible for this role.
+
+Role Overview:
+Seeking a Senior AI / ML Engineer to design, build, and deploy production-grade machine learning solutions. Work hands-on across the full ML lifecycle—feature engineering, model development, automated pipelines, deployment, and monitoring—using Databricks, MLflow, Delta Lake, Python, and PySpark.
+
+Key Responsibilities:
+Develop and deploy ML models and automated pipelines for high-impact business use cases
+Manage feature stores and monitor model performance and reliability
+Apply advanced ML techniques, including NLP, entity resolution, and AI agents
+Optimize models and pipelines for scalability, performance, and cost efficiency
+Collaborate with stakeholders to translate business challenges into ML solutions
+Stay current with emerging AI/ML technologies and best practices
+
+Required Qualifications:
+Bachelor's or Master's in Computer Science, Engineering, Mathematics, or related field
+12+ years in AI/ML, data science, or data engineering
+Hands-on experience with Python, PySpark, Databricks, Delta Lake
+Expertise in cloud platforms (AWS, Azure, or GCP)
+Strong foundation in ML algorithms, statistics, and mathematics
+Experience with MLOps, model versioning, CI/CD, and monitoring
+Knowledge of data governance, quality/drift monitoring, and advanced ML techniques

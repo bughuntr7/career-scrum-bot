@@ -1,0 +1,137 @@
+AI Engineer
+Job Category: Administration
+Requisition Number: AIENG033172
+ 
+
+Posting Details
+Posted: February 17, 2026
+Full-Time
+LocationsShowing 1 location
+Addison, TX 75001, USA
++4 more locations
+Job Details
+Description
+Pay Range:  
+
+$110000 - $140000 / year
+ 
+
+Our Perks: 
+
+Generous PTO plans, sick pay and health benefits
+Annual bonus based on employment standing*
+Work from home and hybrid model employment
+Confie Enablement Fund/ Scholarship Program
+I-Care Recognition Program
+Corporate Social Responsibility Program
+Diversity, Equity and Inclusion Initiatives
+Confie Hub and Discount Programs (Gym Membership)
+ 
+
+Purpose
+
+Responsible for designing, developing, and deploying production-grade AI solutions including autonomous agents, generative AI applications, and RAG-based systems. You will leverage large language models (LLMs), agentic frameworks, and advanced machine learning techniques to automate workflows, improve customer experiences, and drive business innovation.
+
+ 
+
+Essential Duties & Responsibilities 
+
+Design and deploy autonomous AI agents using frameworks like LangGraph, AutoGen, CrewAI, or OpenAI Assistants API for multi-step reasoning and task execution.
+
+Implement function calling, tool use, and API integrations enabling LLMs to interact with enterprise systems, databases, and external applications.
+
+Design agent memory systems including conversational memory, long-term knowledge retention, and context management strategies.
+
+Build advanced RAG systems with vector databases, hybrid search (dense + sparse retrieval), and reranking for domain-specific chatbots and knowledge retrieval.
+
+Develop generative AI solutions for text generation, summarization, audio-to-text transcription, and call center conversation insights using LLMs.
+
+Develop advanced prompting strategies including chain-of-thought reasoning, few-shot learning, and structured output generation.
+
+Integrate with AI platforms including Snowflake Cortex, OpenAI, Azure AI Studio, AWS Bedrock, and Anthropic Claude.
+
+Implement AI observability, guardrails, and evaluation frameworks (RAGAs, TruLens, DeepEval) to ensure quality, safety, and reliability.
+
+Conduct experiments and fine-tune models using techniques like LoRA and QLoRA to optimize performance for domain-specific use cases.
+
+Deploy production solutions using containerization (Docker, Kubernetes), CI/CD pipelines, and cloud-native architectures.
+
+Continuously monitor the performance of AI solutions and implement improvements.
+
+Create high-level and detailed design documentation for AI solutions, including architecture diagrams and technology selection rationale.
+
+Collaborate with cross-functional teams to identify and prioritize high-impact AI opportunities that drive significant business value.
+
+Mentor and provide guidance to junior team members; participate in code reviews and maintain high-quality engineering standards.
+
+Keep updated with advances in AI technology and find opportunities to upgrade existing solutions.
+
+Adhere to best practices in data privacy and security when working with sensitive data.
+
+ 
+
+Qualifications and Education Requirements
+
+Minimum of 3 years of professional experience in AI engineering or related roles.
+
+3+ years experience developing AI/ML solutions on platforms such as Snowflake, Azure, AWS , OpenAI, Databricks, or similar.
+
+2+ years hands-on experience with Generative AI including LLM application development, RAG systems, and production deployments.
+
+Experience with agentic AI frameworks (LangGraph, AutoGen, CrewAI, OpenAI Assistants API) and multi-agent orchestration.
+
+Proficiency in Python, LangChain/LlamaIndex, and vector databases (Pinecone, Weaviate, Chroma, pgvector, Snowflake).
+
+Expertise in prompt engineering including chain-of-thought, few-shot learning, and structured outputs (JSON mode, function calling).
+
+Experience with evaluation frameworks for Generative AI (RAGAs, TruLens, DeepEval) in the context of text generation.
+
+Understanding of AI safety concepts including guardrails, content filtering, hallucination mitigation, and red-teaming.
+
+Experience with data preprocessing, feature engineering, and model evaluation techniques.
+
+Solid understanding of software engineering principles and best practices.
+
+Experience bringing GenAI projects through production and implementation with measurable business impact.
+
+ 
+
+Soft Skills
+
+Strong analytical and problem-solving skills.
+
+Excellent communication skills with ability to articulate complex technical concepts to both technical and non-technical stakeholders.
+
+Highly motivated and self-driven with ability to work independently and in collaborative team environments.
+
+Ability to think creatively about applying AI to solve business problems.
+
+Effective time management and organizational skills to manage multiple projects simultaneously.
+
+Continuous learning mindset and ability to adapt to new technologies in the fast-evolving AI landscape.
+
+ 
+
+Preferred Skills
+
+Bachelor's or Master's degree in Computer Science, Data Science, or a related field is preferred.
+
+Relevant certifications in AI/ML platforms (AWS, Azure, Google Cloud) or related areas are a plus.
+
+Familiarity with the call center environments and operational insurance platforms is preferred
+
+ 
+
+Other Duties
+
+This job description is not designed to cover or contain a comprehensive listing of activities, duties, or responsibilities that are required of the employee for this job. Duties, responsibilities, and activities may change at any time with or without notice
+
+ 
+
+Notice 
+
+As permitted by applicable law and from time-to-time, Confie may use a computer system that has elements of artificial intelligence to help make decisions about your employment, including recruitment, hiring, renewal of employment, or the terms and conditions of your employment. Employees with questions about Confie’s use of these computer systems should contact Human Resources at employeerelations@confie.com 
+
+
+Equal Opportunity Employer
+This employer is required to notify all applicants of their rights pursuant to federal employment laws. For further information, please review the Know Your Rights notice from the Department of Labor.

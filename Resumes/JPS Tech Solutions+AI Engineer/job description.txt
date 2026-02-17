@@ -1,0 +1,33 @@
+AI Engineer
+Job Category: AI EngineerPython
+Job Type: Remote
+Job Location: CaryNorth Carolina
+Compensation: Depends on Experience
+W2: W2-Contract Only; Kindly note that applications on a C2C basis will not be considered for this role.
+Eligible Visa: GCGC-EADH4 EADL2SU.S. Citizen (USC)
+Job Description
+Role Overview:
+We are seeking a highly experienced AI Engineer to design, develop, and deploy scalable AI and machine learning solutions in production environments. The ideal candidate will have a strong background in building intelligent systems, optimizing models, and integrating AI capabilities into enterprise applications.
+
+Key Responsibilities:
+Design, develop, and deploy machine learning and deep learning models for real-world business use cases
+Build and maintain scalable data pipelines and AI-driven microservices using Python
+Implement model training, evaluation, tuning, and performance optimization techniques
+Integrate AI/ML solutions into enterprise applications through APIs and cloud platforms
+Support MLOps practices including CI/CD pipelines, deployment automation, and production monitoring
+Ensure model reliability, scalability, and performance in production environments
+Collaborate with engineering, data, and business teams to translate requirements into AI solutions
+
+Required Skills & Experience:
+12+ years of overall experience in software engineering, AI, or machine learning
+Strong expertise in Python, including NumPy, Pandas, and FastAPI
+Hands-on experience with machine learning and deep learning frameworks such as TensorFlow, PyTorch, or Scikit-learn
+Proven experience deploying and maintaining ML models in production environments
+Strong understanding of cloud platforms such as AWS, Azure, or GCP
+Experience with Docker, Kubernetes, and containerized deployments
+Solid knowledge of RESTful APIs and microservices architecture
+Experience with MLOps, CI/CD pipelines, and model monitoring
+
+Preferred Skills:
+Experience with NLP, Large Language Models (LLMs), or Generative AI
+Familiarity with enterprise-scale, distributed systems and data platforms

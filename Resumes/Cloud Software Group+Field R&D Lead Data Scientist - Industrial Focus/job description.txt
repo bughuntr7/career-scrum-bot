@@ -1,0 +1,26 @@
+Responsibilities
+The position entails the following responsibilities:
+Delve deep into energy, manufacturing, or similar types of analytical and data science challenges.
+Engage with customers through presales support and post-sales success projects.
+Perform and guide R&D topics in the field of applied machine learning and AI.
+Example topics of research and projects include Large Language Models, digital twin, anomaly detection in time series, or mathematical modeling of manufacturing processes.
+Create  re­usable  data  models,  workflows and  test  suites  in  order  to  streamline  project  delivery.
+Provide input into product management and engineering for the product roadmap.
+Innovate in the areas of application and deployment of machine learning.
+Tool Kit Development: create demos and templates with data science libraries.
+Technical marketing: create white papers, blogs and content for the Spotfire user community.
+Represent the team as a speaker or instructor in industry events and external conferences.
+Participate in technical customer engagements through understanding Spotfire use cases, providing guidance, and building prototypes.
+Collaborate with stakeholders on specific industry knowledge, analytics use cases and customer stories related to data science or machine learning in the Energy sector
+Required Qualifications
+5+ years of experience in advanced data analytics and delivery of demonstrations, projects, engagements or deployed software applications. Experience with applying advanced analytics such as machine learning and optimization techniques to large, complex and disparate data sources.
+5+ years of experience in applying analytics to industry verticals such as Energy, Manufacturing, or similar.
+Superior communication and storytelling skills with data. The ability to comfortably communicate with customers’ senior industry personnel, provide compelling presentations and demonstrations of analytics software, and the business value of analytics projects demonstrating domain knowledge in a key Industry such as Manufacturing, Energy, Telecommunications, Financial Services, Healthcare, or Retail.
+Capability to formulate a real-world problem into a mathematical equivalent, propose various solutions, compare and contrast them, deploy the solution, validate the results, and present the results to technical and non-technical stakeholders.
+5+ years of experience with Python or R and some knowledge of SQL. Some experience with other software environments e.g. Spotfire, Tableau, Qlikview, SPSS, KNIME, Azure, AWS and/or other data mining tools will be a plus. 
+Excellent communication and collaboration skills, with the ability to work effectively in a team environment and communicate technical concepts to non-technical stakeholders
+Strong problem-solving skills, with the ability to identify key areas for improvement and develop data-driven solutions to address them.
+A Master’s or higher degree in STEM (Computer Science, Statistics, Data Science, Engineering, Science, or related analytical field of study) with graduate classes in statistics and data mining.
+Desired Qualifications
+Experience with other software components for data preparation and integration e.g. Data Virtualization and Big Data tools such as Snowflake or Databricks and/or further programming or scripting environments e.g. .Net, Java, IronPython, Javascript, C++ is a plus.
+A PhD in STEM (Computer Science, Statistics, Data Science, Engineering, Science, or related analytical field of study) with graduate classes in statistics and data mining.
