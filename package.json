@@ -10,7 +10,9 @@
     "jobright:login": "tsx scripts/loginToJobright.ts",
     "jobright:scan": "tsx scripts/jobrightScan.ts",
     "resume:setup": "tsx scripts/addBaseResume.ts",
-    "test:documents": "tsx scripts/testDocumentGeneration.ts"
+    "test:documents": "tsx scripts/testDocumentGeneration.ts",
+    "test:description": "tsx scripts/testDescriptionExtraction.ts",
+    "docs:backfill": "tsx scripts/generateMissingDocuments.ts"
   },
   "dependencies": {
     "@prisma/client": "5.22.0",

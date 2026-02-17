@@ -31,6 +31,8 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
   const [scanning, setScanning] = useState(false);
   const [scanStatus, setScanStatus] = useState<string>("");
   const [scanCount, setScanCount] = useState<number>(5); // Default to 5 jobs
+  const [generatingDocsForId, setGeneratingDocsForId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   const handleEdit = async (job: Job) => {
     setEditingId(job.id);
@@ -115,6 +117,51 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
     setEditForm({ title: "", company: "", externalUrl: "", description: "" });
   };
 
+  const handleGenerateDocs = async (job: Job) => {
+    // Require job description before generating docs
+    if (!job.hasDescription) {
+      const goToEdit = confirm(
+        "This job does not have a description yet.\n\n" +
+        "To generate a tailored resume and cover letter, please add a job description first.\n\n" +
+        "Do you want to open the Edit form now?"
+      );
+      if (goToEdit) {
+        await handleEdit(job);
+      }
+      return;
+    }
+
+    if (generatingDocsForId === job.id) return;
+
+    setGeneratingDocsForId(job.id);
+    try {
+      const response = await fetch(`/api/jobs/${job.id}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}), // Use defaults on the server
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || data.message || "Failed to generate documents");
+      }
+
+      alert("✅ Resume and cover letter generated successfully");
+
+      // Optimistically update local state to reflect generated docs
+      setJobs(jobs.map((j) =>
+        j.id === job.id
+          ? { ...j, hasResume: true, hasCoverLetter: true }
+          : j
+      ));
+    } catch (error: any) {
+      alert(`❌ Failed to generate documents: ${error.message || "Unknown error"}`);
+    } finally {
+      setGeneratingDocsForId(null);
+    }
+  };
+
   const handleDelete = async (id: number) => {
     const job = jobs.find((j) => j.id === id);
     if (!job) return;
@@ -183,8 +230,28 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
       });
     }
 
+    // Text search across multiple fields
+    if (searchTerm.trim()) {
+      const query = searchTerm.toLowerCase();
+      filtered = filtered.filter((job) => {
+        const dateStr = new Date(job.createdAt).toLocaleDateString().toLowerCase();
+        const company = job.company.toLowerCase();
+        const title = job.title.toLowerCase();
+        const url = job.externalUrl.toLowerCase();
+        const matchScore = job.jobrightMatchScore !== null ? String(job.jobrightMatchScore) : "";
+
+        return (
+          company.includes(query) ||
+          title.includes(query) ||
+          url.includes(query) ||
+          dateStr.includes(query) ||
+          matchScore.includes(query)
+        );
+      });
+    }
+
     return filtered;
-  }, [jobs, dateFilter, descriptionFilter]);
+  }, [jobs, dateFilter, descriptionFilter, searchTerm]);
 
 
 
@@ -378,6 +445,26 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
               <option value="with">With Description</option>
               <option value="without">Without Description</option>
             </select>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: "220px" }}>
+            <label htmlFor="searchJobs" style={{ fontWeight: 500 }}>
+              Search:
+            </label>
+            <input
+              id="searchJobs"
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search company, title, URL, score..."
+              style={{
+                flex: 1,
+                minWidth: "160px",
+                padding: "0.5rem",
+                border: "1px solid #d1d5db",
+                borderRadius: "4px",
+                fontSize: "0.875rem",
+              }}
+            />
           </div>
           <span style={{ color: "#6b7280", fontSize: "0.875rem" }}>
             ({filteredJobs.length} {filteredJobs.length === 1 ? "job" : "jobs"})
@@ -599,6 +686,36 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
                   }}
                 >
                   Edit
+                </button>
+                <button
+                  onClick={() => handleGenerateDocs(job)}
+                  disabled={!job.hasDescription || generatingDocsForId === job.id}
+                  title={
+                    job.hasDescription
+                      ? "Generate tailored resume and cover letter using this job description"
+                      : "Add job description first (Edit) to enable document generation"
+                  }
+                  style={{
+                    padding: "0.25rem 0.75rem",
+                    backgroundColor:
+                      !job.hasDescription || generatingDocsForId === job.id
+                        ? "#9ca3af"
+                        : "#8b5cf6",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor:
+                      !job.hasDescription || generatingDocsForId === job.id
+                        ? "not-allowed"
+                        : "pointer",
+                    fontSize: "0.875rem",
+                    opacity:
+                      !job.hasDescription || generatingDocsForId === job.id
+                        ? 0.7
+                        : 1,
+                  }}
+                >
+                  {generatingDocsForId === job.id ? "Generating..." : "Generate Docs"}
                 </button>
                 <button
                   onClick={() => handleDelete(job.id)}

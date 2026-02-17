@@ -33,17 +33,79 @@ const AUTO_GENERATE_DOCUMENTS = process.env.AUTO_GENERATE_DOCUMENTS !== "false";
 // Minimum Jobright match score (0–100) required to process a job
 const MATCH_SCORE_THRESHOLD = Number(process.env.MATCH_SCORE_THRESHOLD ?? 80);
 
+/**
+ * Safely navigate to a URL with retry logic for network errors
+ */
+async function safeNavigate(page: Page, url: string, options: { maxRetries?: number; waitAfter?: number } = {}) {
+  const maxRetries = options.maxRetries ?? 3;
+  const waitAfter = options.waitAfter ?? 0;
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 1) {
+        const waitTime = Math.min(1000 * Math.pow(2, attempt - 2), 10000); // Exponential backoff, max 10s
+        console.log(`  ⏳ Retry navigation attempt ${attempt}/${maxRetries} after ${waitTime}ms...`);
+        await page.waitForTimeout(waitTime);
+      }
+      
+      await page.goto(url, { 
+        waitUntil: "domcontentloaded",
+        timeout: 60000 
+      });
+      
+      if (waitAfter > 0) {
+        await page.waitForTimeout(waitAfter);
+      }
+      
+      // Success
+      return;
+    } catch (error: any) {
+      lastError = error;
+      const errorMessage = error?.message || String(error);
+      
+      // Check for network/DNS errors
+      if (errorMessage.includes("ERR_NAME_NOT_RESOLVED") || 
+          errorMessage.includes("net::ERR") ||
+          errorMessage.includes("Navigation timeout") ||
+          errorMessage.includes("DNS")) {
+        if (attempt === maxRetries) {
+          console.error(`\n❌ ERROR: Failed to navigate to ${url} after ${maxRetries} attempts.`);
+          console.error(`Network error: ${errorMessage}`);
+          throw new Error(`Network error navigating to ${url}: ${errorMessage}`);
+        }
+        // Continue to retry
+        continue;
+      } else {
+        // For other errors, rethrow immediately
+        throw error;
+      }
+    }
+  }
+}
+
 async function ensureLoggedIn(page: Page) {
   console.log(`Navigating to ${JOBRIGHT_RECOMMEND_URL}...`);
   
-  // Use a more lenient wait strategy
-  await page.goto(JOBRIGHT_RECOMMEND_URL, { 
-    waitUntil: "domcontentloaded",
-    timeout: 60000 
-  });
-  
-  // Wait a bit for any dynamic content
-  await page.waitForTimeout(3000);
+  try {
+    await safeNavigate(page, JOBRIGHT_RECOMMEND_URL, { waitAfter: 3000 });
+  } catch (error: any) {
+    const errorMessage = error?.message || String(error);
+    if (errorMessage.includes("Network error")) {
+      console.error("\n❌ ERROR: Failed to connect to Jobright.ai after multiple attempts.");
+      console.error("\nPossible causes:");
+      console.error("  1. No internet connection - check your network");
+      console.error("  2. DNS resolution issue - try: ping jobright.ai");
+      console.error("  3. Firewall/proxy blocking the connection");
+      console.error("  4. The website might be temporarily down");
+      console.error("\nTroubleshooting steps:");
+      console.error("  1. Check your internet connection");
+      console.error("  2. Try accessing https://jobright.ai in your browser");
+      console.error("  3. Check DNS settings: nslookup jobright.ai");
+      console.error("  4. If behind a proxy, configure Playwright proxy settings\n");
+    }
+    throw error;
+  }
   
   // Check if we're logged in by looking for job cards or login indicators
   const hasJobCards = await page.locator("section[data-testid='job-card'], div[data-testid='job-card']").count() > 0;
@@ -339,6 +401,43 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
     await targetPage.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
     await targetPage.waitForTimeout(3000); // Give extra time for dynamic content to render
 
+    // Dismiss cookie/privacy modals that might block content
+    try {
+      const cookieModalSelectors = [
+        "button:has-text('Accept')",
+        "button:has-text('I Accept')",
+        "button:has-text('Accept All')",
+        "button:has-text('Reject All')",
+        "button:has-text('Save & Exit')",
+        "[class*='cookie'] button",
+        "[id*='cookie'] button",
+        "[class*='privacy'] button",
+        "[id*='privacy'] button",
+        "button[aria-label*='Accept']",
+        "button[aria-label*='Cookie']",
+      ];
+      
+      for (const selector of cookieModalSelectors) {
+        try {
+          const button = targetPage.locator(selector).first();
+          const count = await button.count();
+          if (count > 0) {
+            const isVisible = await button.isVisible().catch(() => false);
+            if (isVisible) {
+              console.log(`  🍪 Dismissing cookie/privacy modal...`);
+              await button.click({ timeout: 5000 });
+              await targetPage.waitForTimeout(1000);
+              break;
+            }
+          }
+        } catch (e) {
+          // Continue to next selector
+        }
+      }
+    } catch (e) {
+      // Not critical, continue
+    }
+
     // General strategy: Try to expand any collapsed content sections
     // This works for any site that uses "Show more", "Read more", etc.
     try {
@@ -406,6 +505,14 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
       // Not critical, continue
     }
 
+    // Save body text BEFORE removing elements (for Strategy 4 fallback)
+    let savedBodyText = "";
+    try {
+      savedBodyText = await targetPage.locator("body").innerText().catch(() => "");
+    } catch (e) {
+      // Ignore
+    }
+
     // First, remove all irrelevant elements from the page
     await targetPage.evaluate(() => {
       // Comprehensive list of elements to remove
@@ -467,6 +574,14 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
       "[class*='posting-description']",
       "[class*='description-text']",
       "[class*='description-content']",
+      
+      // Career/job posting pages (like Plex, Greenhouse, etc.)
+      "[class*='career']",
+      "[class*='careers']",
+      "[id*='career']",
+      "[class*='job-overview']",
+      "[class*='job-overview']",
+      "h1:has-text('Engineer'), h1:has-text('Developer'), h1:has-text('Manager')",
       
       // Content containers
       "[id='content']",
@@ -569,7 +684,8 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
                 const jobKeywordCount = [
                   "responsibilities", "requirements", "qualifications",
                   "experience", "skills", "about", "role", "position",
-                  "what you'll", "looking for"
+                  "what you'll", "looking for", "what you bring", "job overview",
+                  "who we are", "what sets us apart"
                 ].filter(kw => lowerText.includes(kw)).length;
                 
                 // Accept if has keywords OR if substantial length
@@ -580,6 +696,71 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
                 }
               }
             }
+          } catch (e) {
+            // Continue
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }
+
+    // Strategy 2.5: Try finding content near job title (for pages like Plex)
+    if (!descriptionText || descriptionText.length < minLength) {
+      try {
+        // Look for h1 or h2 with job title, then get the following content
+        const titleSelectors = [
+          "h1",
+          "h2",
+          "[class*='job-title']",
+          "[class*='position-title']",
+        ];
+        
+        for (const titleSelector of titleSelectors) {
+          try {
+            const titleElements = await targetPage.locator(titleSelector).all();
+            for (const titleEl of titleElements) {
+              const titleText = await titleEl.innerText().catch(() => "");
+              // Check if it looks like a job title (contains common job words)
+              if (titleText && /engineer|developer|manager|analyst|specialist|director|lead|senior|junior/i.test(titleText)) {
+                // Get the parent container that has substantial content
+                const parentText = await titleEl.evaluateHandle((el) => {
+                  let current = el.parentElement;
+                  let bestParent = null;
+                  let bestLength = 0;
+                  
+                  // Check up to 3 levels of parents
+                  for (let i = 0; i < 3 && current; i++) {
+                    const text = current.innerText || "";
+                    if (text.length > bestLength && text.length > 500) {
+                      bestLength = text.length;
+                      bestParent = current;
+                    }
+                    current = current.parentElement;
+                  }
+                  return bestParent ? bestParent.innerText : null;
+                }).catch(() => null);
+                
+                if (parentText) {
+                  const text = await parentText.jsonValue().catch(() => "");
+                  if (text && text.length > minLength) {
+                    const lowerText = text.toLowerCase();
+                    const jobKeywordCount = [
+                      "responsibilities", "requirements", "qualifications",
+                      "experience", "skills", "about", "role", "position",
+                      "what you'll", "looking for", "what you bring", "job overview"
+                    ].filter(kw => lowerText.includes(kw)).length;
+                    
+                    if (jobKeywordCount >= 1 || text.length > 600) {
+                      descriptionText = text.trim();
+                      console.log(`  ✓ Found description near job title (${descriptionText.length} chars, ${jobKeywordCount} keywords)`);
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+            if (descriptionText && descriptionText.length > minLength) break;
           } catch (e) {
             // Continue
           }
@@ -660,6 +841,89 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
       }
     }
 
+    // Strategy 4: Last resort - extract all body text and filter intelligently
+    if (!descriptionText || descriptionText.length < minLength) {
+      try {
+        console.log("  🔍 Trying last resort: extracting all body text...");
+        // Use saved body text if available, otherwise try to get it again
+        let bodyText = savedBodyText || await targetPage.locator("body").innerText().catch(() => "");
+        if (bodyText && bodyText.length > 1000) {
+          // Filter out navigation, footer, cookie notices, etc.
+          const lines = bodyText.split(/\n/).filter(line => {
+            const lower = line.toLowerCase().trim();
+            // Skip navigation, footer, cookie notices
+            if (lower.includes("cookie") || lower.includes("privacy policy") || 
+                lower.includes("terms of service") || lower.includes("follow us") ||
+                lower.length < 10 || lower.match(/^(home|about|contact|sign in|sign up)$/i)) {
+              return false;
+            }
+            return true;
+          });
+          
+          // Find the section that contains job description keywords
+          let startIdx = -1;
+          let endIdx = lines.length;
+          
+          for (let i = 0; i < lines.length; i++) {
+            const lower = lines[i].toLowerCase();
+            // Look for job description start markers
+            if (startIdx === -1 && (
+              lower.includes("job overview") || lower.includes("about the role") ||
+              lower.includes("position overview") || lower.includes("the role") ||
+              lower.includes("what you'll") || lower.includes("what you will") ||
+              lower.includes("responsibilities") || lower.includes("requirements")
+            )) {
+              startIdx = i;
+            }
+            // Look for end markers
+            if (startIdx !== -1 && (
+              lower.includes("apply now") || lower.includes("how to apply") ||
+              lower.includes("equal opportunity") || lower.includes("diversity and inclusion") ||
+              (lower.includes("compensation") && i > startIdx + 10) // Compensation section is usually at the end
+            )) {
+              endIdx = i;
+              break;
+            }
+          }
+          
+          // If we found a start, extract from there
+          if (startIdx !== -1 && endIdx > startIdx) {
+            const extracted = lines.slice(startIdx, endIdx).join("\n").trim();
+            if (extracted.length > minLength) {
+              descriptionText = extracted;
+              console.log(`  ✓ Found description using body text extraction (${descriptionText.length} chars)`);
+            }
+          } else if (bodyText.length > 2000) {
+            // If no clear markers but substantial text, try to find the main content section
+            // Look for the longest continuous section with job keywords
+            const jobKeywords = ["engineer", "developer", "experience", "skills", "responsibilities", 
+                                "requirements", "qualifications", "role", "position"];
+            let bestSection = "";
+            let bestScore = 0;
+            
+            // Split into paragraphs and score each
+            const paragraphs = bodyText.split(/\n\s*\n/).filter(p => p.trim().length > 100);
+            for (const para of paragraphs) {
+              const lower = para.toLowerCase();
+              const keywordCount = jobKeywords.filter(kw => lower.includes(kw)).length;
+              const score = keywordCount * 100 + para.length;
+              if (score > bestScore && para.length > 500) {
+                bestScore = score;
+                bestSection = para;
+              }
+            }
+            
+            if (bestSection.length > minLength) {
+              descriptionText = bestSection.trim();
+              console.log(`  ✓ Found description using paragraph scoring (${descriptionText.length} chars)`);
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore errors in fallback
+      }
+    }
+
     // Final validation: ensure we have a substantial, quality description
     // Be more lenient - accept if substantial length OR has job keywords
     const minFinalLength = 200;
@@ -675,7 +939,10 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
         lowerText.includes("role") ||
         lowerText.includes("position") ||
         lowerText.includes("what you'll") ||
+        lowerText.includes("what you will") ||
+        lowerText.includes("what you bring") ||
         lowerText.includes("looking for") ||
+        lowerText.includes("job overview") ||
         descriptionText.length > 500; // Accept if just long enough
       
       if (hasJobContent) {
@@ -686,8 +953,11 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
       }
     }
 
-    console.warn(`  ⚠️  Could not extract substantial job description (found ${descriptionText.length} chars, need ${minFinalLength}+)`);
-    return "";
+    // Final check - if we still don't have a description
+    if (!descriptionText || descriptionText.length < minFinalLength) {
+      console.warn(`  ⚠️  Could not extract substantial job description (found ${descriptionText ? descriptionText.length : 0} chars, need ${minFinalLength}+)`);
+      return "";
+    }
   } catch (e) {
     console.warn(`  ⚠️  Error extracting job description: ${e}`);
     return "";
@@ -873,33 +1143,125 @@ async function clickApplyAndCaptureUrl(context: BrowserContext, page: Page, card
   // Try to click the button
   let clicked = false;
   try {
-    // Wait for new page event with longer timeout
-    const pagePromise = context.waitForEvent("page", { timeout: 8000 }).catch(() => null);
+    // Get all pages before clicking to detect new tabs
+    const pagesBefore = context.pages();
+    
+    // Wait for new page event with longer timeout for slow-loading sites
+    const pagePromise = context.waitForEvent("page", { timeout: 30000 }).catch(() => null);
     
     // Click the button
     await applyButton.click({ timeout: 15000 });
     clicked = true;
+    console.log("  ✅ Apply button clicked, waiting for navigation...");
     
     // Wait a bit to see if navigation happens
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(2000);
     
-    // Check if a new page was opened
-    const maybeNewPage = await pagePromise;
+    // Check if a new page was opened (either via event or by checking all pages)
+    let maybeNewPage = await pagePromise;
+    
+    // Also check if a new page appeared even if event didn't fire
+    if (!maybeNewPage) {
+      const pagesAfter = context.pages();
+      const newPages = pagesAfter.filter(p => !pagesBefore.includes(p));
+      if (newPages.length > 0) {
+        maybeNewPage = newPages[0];
+        console.log("  📄 Detected new tab (missed by event listener)");
+      }
+    }
     
     let targetPage = page;
     if (maybeNewPage) {
       targetPage = maybeNewPage;
-      console.log("  📄 New tab opened");
-      await targetPage.waitForLoadState("domcontentloaded").catch(() => {});
-      await targetPage.waitForTimeout(1000);
+      console.log("  📄 New tab opened, waiting for company site to load...");
+      // Wait for the page to fully load - use networkidle for slow-loading sites
+      try {
+        await targetPage.waitForLoadState("networkidle", { timeout: 45000 }).catch(() => {
+          // Fallback to load state if networkidle times out
+          console.log("  ⏳ Network idle timeout, waiting for load state...");
+          return targetPage.waitForLoadState("load", { timeout: 45000 });
+        });
+        console.log("  ✅ Page loaded (networkidle)");
+      } catch (e) {
+        // Final fallback - wait for domcontentloaded
+        console.log("  ⏳ Load timeout, waiting for domcontentloaded...");
+        await targetPage.waitForLoadState("domcontentloaded", { timeout: 45000 });
+        console.log("  ✅ Page loaded (domcontentloaded)");
+      }
+      // Additional wait for dynamic content to render
+      await targetPage.waitForTimeout(3000);
+      console.log("  ✅ Company site fully loaded, ready to extract description");
     } else {
-      // Check if current page navigated
-      await page.waitForTimeout(2000);
-      const urlAfterClick = page.url();
-      if (urlAfterClick !== urlBeforeClick && !urlAfterClick.includes("jobright.ai")) {
+      // Check if current page navigated - wait longer and check multiple times
+      console.log("  🔄 Checking for same-page navigation (this may take 30+ seconds for slow sites)...");
+      
+      // Wait and check URL multiple times with increasing delays
+      let urlAfterClick = page.url();
+      let navigationDetected = false;
+      
+      for (let check = 0; check < 10; check++) {
+        await page.waitForTimeout(3000); // Wait 3 seconds between checks
+        urlAfterClick = page.url();
+        
+        if (urlAfterClick !== urlBeforeClick && !urlAfterClick.includes("jobright.ai")) {
+          navigationDetected = true;
+          console.log(`  ✅ Navigation detected after ${(check + 1) * 3} seconds`);
+          break;
+        }
+        
+        // Also check if page is loading (indicates navigation started)
+        const isLoading = await page.evaluate(() => {
+          return document.readyState !== 'complete' || 
+                 (window.performance && window.performance.navigation.type === 1);
+        }).catch(() => false);
+        
+        if (isLoading) {
+          console.log(`  ⏳ Page is loading, waiting for navigation to complete...`);
+        }
+      }
+      
+      if (navigationDetected) {
         // Same-page navigation to external site
         targetPage = page;
-        console.log("  🔄 Same-page navigation detected");
+        console.log("  🔄 Same-page navigation detected, waiting for company site to fully load...");
+        // Wait for the page to fully load
+        try {
+          await targetPage.waitForLoadState("networkidle", { timeout: 45000 }).catch(() => {
+            console.log("  ⏳ Network idle timeout, waiting for load state...");
+            return targetPage.waitForLoadState("load", { timeout: 45000 });
+          });
+          console.log("  ✅ Page loaded (networkidle)");
+        } catch (e) {
+          console.log("  ⏳ Load timeout, waiting for domcontentloaded...");
+          await targetPage.waitForLoadState("domcontentloaded", { timeout: 45000 });
+          console.log("  ✅ Page loaded (domcontentloaded)");
+        }
+        // Additional wait for dynamic content
+        await targetPage.waitForTimeout(3000);
+        console.log("  ✅ Company site fully loaded, ready to extract description");
+      } else {
+        // Still on Jobright after long wait - might be a modal or popup
+        console.log("  ⚠️  No navigation detected after 30 seconds, checking for modal/popup...");
+        // Give it one more check
+        await page.waitForTimeout(5000);
+        urlAfterClick = page.url();
+        if (urlAfterClick === urlBeforeClick || urlAfterClick.includes("jobright.ai")) {
+          console.warn("  ⚠️  Still on Jobright after long wait, click may not have worked");
+          // Still try to dismiss modal in case it appeared
+          await dismissApplyModal(page);
+          return null;
+        }
+        // If URL changed, continue with same-page navigation logic
+        targetPage = page;
+        console.log("  🔄 Late navigation detected, waiting for company site to load...");
+        try {
+          await targetPage.waitForLoadState("networkidle", { timeout: 45000 }).catch(() => {
+            return targetPage.waitForLoadState("load", { timeout: 45000 });
+          });
+        } catch (e) {
+          await targetPage.waitForLoadState("domcontentloaded", { timeout: 45000 });
+        }
+        await targetPage.waitForTimeout(3000);
       }
     }
 
@@ -907,7 +1269,7 @@ async function clickApplyAndCaptureUrl(context: BrowserContext, page: Page, card
     
     // Heuristic: ignore Jobright URLs, only keep external application URLs.
     if (url.includes("jobright.ai")) {
-      console.warn("  ⚠️  Still on Jobright, click may not have worked");
+      console.warn("  ⚠️  Still on Jobright after all waiting, click may not have worked");
       // Still try to dismiss modal in case it appeared
       await dismissApplyModal(page);
       if (targetPage !== page) {
@@ -916,8 +1278,21 @@ async function clickApplyAndCaptureUrl(context: BrowserContext, page: Page, card
       return null;
     }
 
+    // Skip LinkedIn URLs completely - we don't want to store or process them
+    if (url.toLowerCase().includes("linkedin.com")) {
+      console.log(`  ⏭️  Skipping LinkedIn URL entirely (will not save job): ${url}`);
+      if (targetPage !== page) {
+        await targetPage.close().catch(() => {});
+      }
+      // Return to Jobright and dismiss modal so the card is marked as processed
+      await page.bringToFront();
+      await page.waitForTimeout(500);
+      await dismissApplyModal(page);
+      return null; // Signal to caller that this job should be skipped
+    }
+
     // Extract job description from the external page BEFORE closing it
-    console.log("  📝 Extracting job description...");
+    console.log("  📝 Extracting job description from fully loaded page...");
     const description = await extractJobDescription(targetPage);
     
     if (targetPage !== page) {
@@ -935,32 +1310,124 @@ async function clickApplyAndCaptureUrl(context: BrowserContext, page: Page, card
       console.warn("  ⚠️  Normal click failed, trying force click...");
       try {
         const urlBeforeForce = page.url();
-        const pagePromise = context.waitForEvent("page", { timeout: 8000 }).catch(() => null);
+        const pagesBeforeForce = context.pages();
+        
+        // Wait for new page event with longer timeout
+        const pagePromise = context.waitForEvent("page", { timeout: 30000 }).catch(() => null);
         
         await applyButton.click({ force: true, timeout: 15000 });
-        await page.waitForTimeout(1500);
+        console.log("  ✅ Apply button clicked (force), waiting for navigation...");
+        await page.waitForTimeout(2000);
         
-        const maybeNewPage = await pagePromise;
+        // Check if a new page was opened (either via event or by checking all pages)
+        let maybeNewPage = await pagePromise;
+        
+        // Also check if a new page appeared even if event didn't fire
+        if (!maybeNewPage) {
+          const pagesAfterForce = context.pages();
+          const newPages = pagesAfterForce.filter(p => !pagesBeforeForce.includes(p));
+          if (newPages.length > 0) {
+            maybeNewPage = newPages[0];
+            console.log("  📄 Detected new tab (missed by event listener)");
+          }
+        }
         
         let targetPage = page;
         if (maybeNewPage) {
           targetPage = maybeNewPage;
-          console.log("  📄 New tab opened (force click)");
-          await targetPage.waitForLoadState("domcontentloaded").catch(() => {});
-          await targetPage.waitForTimeout(1000);
+          console.log("  📄 New tab opened (force click), waiting for company site to load...");
+          // Wait for the page to fully load - use networkidle for slow-loading sites
+          try {
+            await targetPage.waitForLoadState("networkidle", { timeout: 45000 }).catch(() => {
+              console.log("  ⏳ Network idle timeout, waiting for load state...");
+              return targetPage.waitForLoadState("load", { timeout: 45000 });
+            });
+            console.log("  ✅ Page loaded (networkidle)");
+          } catch (e) {
+            console.log("  ⏳ Load timeout, waiting for domcontentloaded...");
+            await targetPage.waitForLoadState("domcontentloaded", { timeout: 45000 });
+            console.log("  ✅ Page loaded (domcontentloaded)");
+          }
+          // Additional wait for dynamic content to render
+          await targetPage.waitForTimeout(3000);
+          console.log("  ✅ Company site fully loaded, ready to extract description");
         } else {
-          await page.waitForTimeout(2000);
-          const urlAfterForce = page.url();
-          if (urlAfterForce !== urlBeforeForce && !urlAfterForce.includes("jobright.ai")) {
+          // Check if current page navigated - wait longer and check multiple times
+          console.log("  🔄 Checking for same-page navigation (force click, may take 30+ seconds)...");
+          
+          // Wait and check URL multiple times with increasing delays
+          let urlAfterForce = page.url();
+          let navigationDetected = false;
+          
+          for (let check = 0; check < 10; check++) {
+            await page.waitForTimeout(3000); // Wait 3 seconds between checks
+            urlAfterForce = page.url();
+            
+            if (urlAfterForce !== urlBeforeForce && !urlAfterForce.includes("jobright.ai")) {
+              navigationDetected = true;
+              console.log(`  ✅ Navigation detected after ${(check + 1) * 3} seconds`);
+              break;
+            }
+            
+            // Also check if page is loading (indicates navigation started)
+            const isLoading = await page.evaluate(() => {
+              return document.readyState !== 'complete' || 
+                     (window.performance && window.performance.navigation.type === 1);
+            }).catch(() => false);
+            
+            if (isLoading) {
+              console.log(`  ⏳ Page is loading, waiting for navigation to complete...`);
+            }
+          }
+          
+          if (navigationDetected) {
+            // Same-page navigation to external site
             targetPage = page;
-            console.log("  🔄 Same-page navigation (force click)");
+            console.log("  🔄 Same-page navigation detected, waiting for company site to fully load...");
+            // Wait for the page to fully load
+            try {
+              await targetPage.waitForLoadState("networkidle", { timeout: 45000 }).catch(() => {
+                console.log("  ⏳ Network idle timeout, waiting for load state...");
+                return targetPage.waitForLoadState("load", { timeout: 45000 });
+              });
+              console.log("  ✅ Page loaded (networkidle)");
+            } catch (e) {
+              console.log("  ⏳ Load timeout, waiting for domcontentloaded...");
+              await targetPage.waitForLoadState("domcontentloaded", { timeout: 45000 });
+              console.log("  ✅ Page loaded (domcontentloaded)");
+            }
+            // Additional wait for dynamic content
+            await targetPage.waitForTimeout(3000);
+            console.log("  ✅ Company site fully loaded, ready to extract description");
+          } else {
+            // Still on Jobright after long wait - might be a modal or popup
+            console.log("  ⚠️  No navigation detected after 30 seconds, checking for modal/popup...");
+            // Give it one more check
+            await page.waitForTimeout(5000);
+            urlAfterForce = page.url();
+            if (urlAfterForce === urlBeforeForce || urlAfterForce.includes("jobright.ai")) {
+              console.warn("  ⚠️  Still on Jobright after long wait (force click), click may not have worked");
+              await dismissApplyModal(page);
+              return null;
+            }
+            // If URL changed, continue with same-page navigation logic
+            targetPage = page;
+            console.log("  🔄 Late navigation detected, waiting for company site to load...");
+            try {
+              await targetPage.waitForLoadState("networkidle", { timeout: 45000 }).catch(() => {
+                return targetPage.waitForLoadState("load", { timeout: 45000 });
+              });
+            } catch (e) {
+              await targetPage.waitForLoadState("domcontentloaded", { timeout: 45000 });
+            }
+            await targetPage.waitForTimeout(3000);
           }
         }
 
         const url = targetPage.url();
         
         if (url.includes("jobright.ai")) {
-          console.warn("  ⚠️  Still on Jobright after force click");
+          console.warn("  ⚠️  Still on Jobright after all waiting (force click), click may not have worked");
           await dismissApplyModal(page);
           if (targetPage !== page) {
             await targetPage.close().catch(() => {});
@@ -969,7 +1436,7 @@ async function clickApplyAndCaptureUrl(context: BrowserContext, page: Page, card
         }
 
         // Extract job description from the external page BEFORE closing it
-        console.log("  📝 Extracting job description...");
+        console.log("  📝 Extracting job description from fully loaded page...");
         const description = await extractJobDescription(targetPage);
         
         if (targetPage !== page) {
@@ -1114,8 +1581,7 @@ async function main() {
     // Make sure we're on the Jobright page and dismiss any modals
     await page.bringToFront();
     if (!page.url().includes("jobright.ai/jobs/recommend")) {
-      await page.goto(JOBRIGHT_RECOMMEND_URL, { waitUntil: "domcontentloaded" });
-      await page.waitForTimeout(2000); // Wait for cards to load
+      await safeNavigate(page, JOBRIGHT_RECOMMEND_URL, { maxRetries: 2, waitAfter: 2000 });
     }
     await dismissApplyModal(page);
     
@@ -1384,9 +1850,34 @@ async function main() {
       consecutiveSkips++;
       console.log(`  ⏭️  SKIPPING: No apply button found (${consecutiveSkips} in a row)`);
       console.log(`  📊 Summary: Checked ${debugButtons.length} buttons, none matched criteria`);
-      cardIndex++;
-      skippedCount++;
-      continue;
+      
+      // Every job card should have an apply button, so if we find 0 buttons,
+      // it's likely a loading/rendering issue - immediately hard refresh
+      console.log(`  🔄 Hard refreshing recommend page (no apply button found - likely loading issue)...`);
+      try {
+        // Ensure we're on the recommend page
+        if (page.url().includes("jobright.ai/jobs/recommend")) {
+          await page.reload({ waitUntil: "networkidle", timeout: 60000 });
+          await page.waitForTimeout(3000); // Wait for cards to load
+          console.log(`  ✅ Page refreshed, re-fetching job cards...`);
+          // Reset card index and get fresh cards
+          cardIndex = 0;
+          consecutiveSkips = 0; // Reset skip counter after refresh
+          continue; // Restart the loop with fresh cards
+        } else {
+          // Navigate to recommend page if we're not there
+          await safeNavigate(page, JOBRIGHT_RECOMMEND_URL, { maxRetries: 2, waitAfter: 3000 });
+          cardIndex = 0;
+          consecutiveSkips = 0;
+          continue;
+        }
+      } catch (refreshError: any) {
+        console.warn(`  ⚠️  Failed to refresh page: ${refreshError.message}`);
+        // If refresh fails, continue with normal skip logic
+        cardIndex++;
+        skippedCount++;
+        continue;
+      }
     }
     
     // Reset skip counter when we find a valid card
@@ -1432,14 +1923,8 @@ async function main() {
 
     const { url: applyUrl, description } = result;
 
-    // Skip LinkedIn URLs
-    if (applyUrl.toLowerCase().includes("linkedin.com")) {
-      console.log(`  ⏭️  Skipping LinkedIn URL: ${applyUrl}`);
-      await dismissApplyModal(page);
-      skippedCount++;
-      await page.waitForTimeout(500);
-      continue;
-    }
+    // Note: LinkedIn URLs are already filtered out in clickApplyAndCaptureUrl
+    // before job description extraction to avoid unnecessary processing
 
     console.log(`  ✅ Captured apply URL: ${applyUrl}`);
     if (description) {
@@ -1465,6 +1950,28 @@ async function main() {
     }
 
     try {
+      // Ensure we're back on Jobright page before processing
+      await page.bringToFront();
+      if (!page.url().includes("jobright.ai/jobs/recommend")) {
+        console.log(`  🔄 Navigating back to Jobright page...`);
+        await safeNavigate(page, JOBRIGHT_RECOMMEND_URL, { maxRetries: 2, waitAfter: 2000 });
+      }
+      
+      // Note: dismissApplyModal is already called in clickApplyAndCaptureUrl when a new tab opens
+      // But if same-page navigation happened, we need to dismiss it here
+      // Check if modal is still present and dismiss if needed
+      try {
+        const modalButton = page.locator("button[class*='job-apply-confirm-popup-yes-button'], button:has-text('Yes, I applied')").first();
+        const modalCount = await modalButton.count();
+        if (modalCount > 0 && await modalButton.isVisible().catch(() => false)) {
+          console.log(`  ✅ Clicking "Yes, I applied!" button...`);
+          await dismissApplyModal(page);
+          await page.waitForTimeout(1500); // Wait for modal to close and card to disappear
+        }
+      } catch (e) {
+        // Modal might already be dismissed, continue
+      }
+      
       const savedJob = await upsertJobApplication({
         userId: actualUserId,
         title: meta.title,
@@ -1518,12 +2025,32 @@ async function main() {
       // After successfully processing a job and clicking "Yes, I applied!", 
       // refresh the page to get updated job list (the applied job will be removed)
       console.log(`  🔄 Refreshing recommended page...`);
-      await page.goto(JOBRIGHT_RECOMMEND_URL, { waitUntil: "domcontentloaded" });
-      await page.waitForTimeout(2000); // Wait for cards to load
+      
+      // Always use safeNavigate to ensure we get a fresh page load with updated cards
+      await safeNavigate(page, JOBRIGHT_RECOMMEND_URL, { maxRetries: 2, waitAfter: 3000 });
+      
+      // Wait for job cards to load after navigation
+      let cardsAfterRefresh = await getJobCards(page);
+      let retries = 0;
+      while (cardsAfterRefresh.length === 0 && retries < 5) {
+        console.log(`  ⏳ Waiting for cards to load after refresh (attempt ${retries + 1}/5)...`);
+        await page.waitForTimeout(2000);
+        cardsAfterRefresh = await getJobCards(page);
+        retries++;
+      }
+      
+      if (cardsAfterRefresh.length > 0) {
+        console.log(`  ✅ Page refreshed, found ${cardsAfterRefresh.length} job cards`);
+      } else {
+        console.warn(`  ⚠️  No cards found after refresh, but continuing...`);
+      }
       
       // Reset card index to start from the beginning after refresh
       cardIndex = 0;
-      console.log(`  ✅ Page refreshed, starting from first card`);
+      console.log(`  ✅ Starting from first card after refresh`);
+      
+      // Continue loop to process next job (don't increment attempt since we refreshed)
+      continue;
     } catch (error: any) {
       console.error(`  ❌ Error saving job: ${error.message}`);
       skippedCount++;
