@@ -7,7 +7,7 @@ Personal job-application assistant that scans your Jobright **Recommended** boar
 - **Frontend / Backend**: Next.js (App Router) + React + TypeScript  
 - **Automation**: Playwright (Node) with persistent Jobright session  
 - **Database**: PostgreSQL + Prisma  
-- **LLM**: OpenAI API (tailored resume + story-like cover letter)  
+- **LLM**: OpenAI API **or** ChatGPT web UI (tailored resume + story-like cover letter)  
 - **Documents**: `.docx` generation via Docxtemplater + Mammoth
 
 ---
@@ -45,6 +45,9 @@ Personal job-application assistant that scans your Jobright **Recommended** boar
     - Cover letter `.docx` (`Resumes/<Company+Role>/Cover Letter.docx`).
     - Text copy of job description.
   - Saves raw LLM outputs into `tailored_resumes` and `cover_letters` tables and marks job as `READY_TO_APPLY`.
+- **Document generation source**
+  - **OpenAI API** (default): set `OPENAI_API_KEY`; generation runs server-side.
+  - **ChatGPT web UI**: set `DOC_GENERATION_SOURCE=chatgpt-ui` and log in once with `npm run chatgpt:login`. Uses your paid ChatGPT session (no API quota). Same prompts and .docx output; scan and “Generate” from the app use ChatGPT when this env is set.
 
 ---
 
@@ -85,6 +88,9 @@ MATCH_SCORE_THRESHOLD=80            # minimum Jobright match score to process
 # Optional
 OPENAI_MODEL=gpt-4
 RESUMES_OUTPUT_DIR=Resumes
+
+# Use ChatGPT web UI instead of OpenAI API for resume/cover letter (no API key needed; log in once: npm run chatgpt:login)
+# DOC_GENERATION_SOURCE=chatgpt-ui
 ```
 
 ### 3. Run Prisma migrations
@@ -180,10 +186,14 @@ Behavior per job:
 ## Scripts
 
 - **`npm run dev`** – Next.js dev server.
-- **`npm run build` / `npm start`** – production build and start.
+- **`npm run build`** / **`npm start`** – production build and start.
 - **`npm run jobright:login`** – open Playwright browser to log in to Jobright (persistent context).
 - **`npm run jobright:scan`** – run the Jobright Recommended scanner via Playwright.
-- **`npm run test:documents`** – test resume + cover letter generation pipeline using a sample job.
+- **`npm run chatgpt:login`** – log in to ChatGPT once (used when `DOC_GENERATION_SOURCE=chatgpt-ui`).
+- **`npm run docs:chatgpt-ui`** – generate resume + cover letter via ChatGPT UI and save .docx (by job ID or env files).
+- **`npm run docs:backfill`** – generate docs for all jobs that have a description but no resume/cover letter (uses OpenAI API or `DOC_GENERATION_SOURCE`).
+- **`npm run docs:backfill:chatgpt-ui`** – same as backfill but always uses ChatGPT UI; prompts to sign in if needed.
+- **`npm run test:documents`** – test resume + cover letter generation pipeline using a sample job (OpenAI API).
 
 ---
 

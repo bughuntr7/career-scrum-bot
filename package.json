@@ -12,7 +12,12 @@
     "resume:setup": "tsx scripts/addBaseResume.ts",
     "test:documents": "tsx scripts/testDocumentGeneration.ts",
     "test:description": "tsx scripts/testDescriptionExtraction.ts",
-    "docs:backfill": "tsx scripts/generateMissingDocuments.ts"
+    "chatgpt:login": "tsx scripts/loginToChatGPT.ts",
+    "test:chatgpt-ui": "tsx scripts/testChatGPTUiGeneration.ts",
+    "docs:chatgpt-ui": "tsx scripts/generateDocumentsViaChatGPTUi.ts",
+    "docs:backfill": "tsx scripts/generateMissingDocuments.ts",
+    "docs:backfill:chatgpt-ui": "tsx scripts/generateMissingDocumentsChatGPTUi.ts",
+    "docs:backfill:watch": "tsx scripts/backfillWatch.ts"
   },
   "dependencies": {
     "@prisma/client": "5.22.0",

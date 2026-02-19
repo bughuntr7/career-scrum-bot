@@ -8,13 +8,19 @@ export async function GET(req: NextRequest) {
 
   const userId = userIdParam ? Number(userIdParam) : undefined;
 
+  const sourceFilter = searchParams.get("source"); // optional: jobright, ziprecruiter
+
   const jobs = await prisma.jobApplication.findMany({
-    where: userId ? { userId } : undefined,
+    where: {
+      ...(userId ? { userId } : {}),
+      ...(sourceFilter ? { source: sourceFilter } : {}),
+    },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
       title: true,
       company: true,
+      source: true,
       externalUrl: true,
       createdAt: true,
       jobrightMatchScore: true,

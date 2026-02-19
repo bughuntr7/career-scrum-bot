@@ -1,0 +1,14 @@
+We are looking for a Senior Full Stack Engineer to join our team.
+
+Requirements:
+- 4+ years experience with TypeScript and React
+- Strong experience with Node.js and REST APIs
+- Experience with PostgreSQL or similar relational databases
+- Familiarity with AWS or other cloud platforms
+- Good communication and collaboration skills
+
+Nice to have:
+- Experience with Playwright or other automation tools
+- Knowledge of Prisma or other ORMs
+
+You will work on our core product, building features that our customers use daily. We value clean code, testing, and teamwork.

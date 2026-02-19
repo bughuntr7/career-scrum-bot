@@ -1,0 +1,44 @@
+Jiayong Lin
+Software Engineer | Full Stack Developer
+SUMMARY
+Senior full stack engineer with 5+ years of experience building and scaling customer-facing web applications. Deep expertise in TypeScript, React, and Node.js, with a strong focus on clean code, RESTful APIs, and relational data modeling. Experienced working in AWS-based environments and collaborating closely with product and design teams to deliver reliable, well-tested features used daily by end users.
+SKILLS
+TypeScript · React · Node.js · REST APIs · PostgreSQL · AWS · Git · Automated Testing
+PROFESSIONAL EXPERIENCE
+Senior Software Engineer at TechCorp (2021 – Present)
+
+
+Led the migration of a large legacy dashboard to React and TypeScript, significantly improving performance, maintainability, and developer velocity, resulting in a 40% reduction in page load time.
+
+
+Designed and implemented scalable REST APIs in Node.js to support core product features, handling high-traffic usage from 50k+ active users.
+
+
+Built a real-time notification system backed by PostgreSQL, focusing on reliable data modeling, efficient queries, and clear API contracts.
+
+
+Worked closely with product managers and designers to translate requirements into well-structured, testable features delivered on schedule.
+
+
+Contributed to improving code quality through consistent code reviews, shared standards, and a focus on readable, maintainable architecture.
+
+
+Technologies & Skills: TypeScript · React · Node.js · REST APIs · PostgreSQL · AWS · Automated Testing
+Software Engineer at StartupXYZ (2019 – 2021)
+
+
+Developed and maintained full stack features using Node.js and REST APIs for customer-facing tools and internal admin dashboards.
+
+
+Designed and evolved relational data models, working with PostgreSQL to support new product requirements and reporting needs.
+
+
+Introduced automated testing practices into the development workflow, improving confidence in releases and reducing production issues by 30%.
+
+
+Collaborated with a small, cross-functional team, contributing to technical decisions and balancing rapid iteration with long-term code health.
+
+
+Technologies & Skills: JavaScript · Node.js · REST APIs · PostgreSQL · Automated Testing · AWS
+EDUCATION
+B.S. Computer Science, State University, 2019

@@ -34,6 +34,11 @@ Do not change my name, company names, employment dates, or high-level role title
 
 IMPORTANT: Do NOT modify the EDUCATION section. Keep it exactly as it appears in the base resume.
 
+PROFESSIONAL EXPERIENCE – structure for each role:
+- First line: Title | Company | Location | Date (unchanged).
+- Next line: Exactly one line in parentheses that briefly describes the company or the scope of the role (e.g. "(Meta builds foundational AI systems and large-scale ML infrastructure serving billions of users.)"). Use factual, one-sentence context so readers get quick orientation.
+- Then bullet points, then "Technologies & Skills: ..." as below.
+
 You can modify the technologies, tools, and skills mentioned in the Summary, Professional Experience, Skills, and Work History bullet points to align naturally with the target job.
 
 CRITICAL - Technologies & Skills Sections:

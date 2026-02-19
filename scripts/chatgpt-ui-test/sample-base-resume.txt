@@ -1,0 +1,24 @@
+Jiayong Lin
+Software Engineer | Full Stack Developer
+
+SUMMARY
+Experienced software engineer with 5+ years building web applications. Strong in TypeScript, React, Node.js, and cloud services. Passionate about clean code and user-centric design.
+
+SKILLS
+JavaScript · TypeScript · React · Node.js · PostgreSQL · REST APIs · Git
+
+PROFESSIONAL EXPERIENCE
+
+Senior Software Engineer at TechCorp (2021 – Present)
+- Led migration of legacy dashboard to React and TypeScript, improving load time by 40%.
+- Designed and implemented real-time notification system used by 50k+ users.
+- Collaborated with product and design to ship features on schedule.
+Technologies & Skills: TypeScript · React · Node.js · PostgreSQL · AWS
+
+Software Engineer at StartupXYZ (2019 – 2021)
+- Built and maintained customer-facing APIs and admin tools.
+- Introduced automated testing; reduced production bugs by 30%.
+Technologies & Skills: JavaScript · Node.js · MongoDB · Docker
+
+EDUCATION
+B.S. Computer Science, State University, 2019

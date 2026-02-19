@@ -49,6 +49,7 @@ model Resume {
 model JobApplication {
   id                 Int               @id @default(autoincrement())
   userId             Int
+  source             String            @default("jobright") @db.VarChar(50)  // jobright, ziprecruiter, etc.
   jobrightJobId      String?           @db.VarChar(255)
   title              String
   company            String

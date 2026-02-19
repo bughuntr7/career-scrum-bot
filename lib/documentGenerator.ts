@@ -2,6 +2,7 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
 import * as fs from "fs";
 import * as path from "path";
 import Docxtemplater from "docxtemplater";
+import { stripRoleHeaderLineFromBlock } from "./resumeParser";
 
 // Use dynamic imports for libraries that have module compatibility issues
 const mammoth = require("mammoth");
@@ -334,9 +335,14 @@ export async function saveResumeAsDocx(
         skillsContent: parsedResume.skills,
       };
       
-      // Add work experience placeholders (up to 4)
-      for (let i = 0; i < Math.min(parsedResume.workExperiences.length, 4); i++) {
-        placeholders[`workExperience${i + 1}Content`] = parsedResume.workExperiences[i];
+      // Add work experience placeholders (up to 4). Strip role header line from each block
+      // so the template's own role title is not duplicated (template already shows "Title | Company | ...").
+      for (let i = 0; i < 4; i++) {
+        const content =
+          i < parsedResume.workExperiences.length
+            ? stripRoleHeaderLineFromBlock(parsedResume.workExperiences[i])
+            : "";
+        placeholders[`workExperience${i + 1}Content`] = content;
       }
       
       // Use Docxtemplater to replace all placeholders

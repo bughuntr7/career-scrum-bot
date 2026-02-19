@@ -10,6 +10,7 @@ async function getJobs() {
       id: true,
       title: true,
       company: true,
+      source: true,
       externalUrl: true,
       createdAt: true,
       jobrightMatchScore: true,

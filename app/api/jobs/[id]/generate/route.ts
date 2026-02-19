@@ -33,8 +33,9 @@ export async function POST(
       model: body.model || "gpt-4",
       outputDir: body.outputDir || "Resumes",
       saveToDatabase: body.saveToDatabase !== false,
-      resumeTemplatePath: body.resumeTemplatePath, // Optional: custom template path
-      coverLetterTemplatePath: body.coverLetterTemplatePath, // Optional: custom template path
+      resumeTemplatePath: body.resumeTemplatePath,
+      coverLetterTemplatePath: body.coverLetterTemplatePath,
+      source: body.source, // "openai-api" | "chatgpt-ui" – overrides DOC_GENERATION_SOURCE when set
     };
 
     // No longer need baseResumeId - we use the template .docx file directly

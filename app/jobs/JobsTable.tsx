@@ -7,6 +7,7 @@ type Job = {
   id: number;
   title: string;
   company: string;
+  source: string;
   externalUrl: string;
   createdAt: string;
   jobrightMatchScore: number | null;
@@ -25,6 +26,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
     description: ""
   });
   const [dateFilter, setDateFilter] = useState<string>("all"); // "all", "today", "week", "month"
+  const [sourceFilter, setSourceFilter] = useState<string>("all"); // "all", "jobright", "ziprecruiter"
   const [descriptionFilter, setDescriptionFilter] = useState<string>("all"); // "all", "with", "without"
   const [loadingEditForm, setLoadingEditForm] = useState(false);
   const [savingEditForm, setSavingEditForm] = useState(false);
@@ -218,6 +220,11 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
       });
     }
 
+    // Filter by source
+    if (sourceFilter !== "all") {
+      filtered = filtered.filter((job) => (job.source || "jobright") === sourceFilter);
+    }
+
     // Filter by description presence
     if (descriptionFilter !== "all") {
       filtered = filtered.filter((job) => {
@@ -237,6 +244,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
         const dateStr = new Date(job.createdAt).toLocaleDateString().toLowerCase();
         const company = job.company.toLowerCase();
         const title = job.title.toLowerCase();
+        const source = (job.source || "").toLowerCase();
         const url = job.externalUrl.toLowerCase();
         const matchScore = job.jobrightMatchScore !== null ? String(job.jobrightMatchScore) : "";
 
@@ -245,13 +253,14 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
           title.includes(query) ||
           url.includes(query) ||
           dateStr.includes(query) ||
-          matchScore.includes(query)
+          matchScore.includes(query) ||
+          source.includes(query)
         );
       });
     }
 
     return filtered;
-  }, [jobs, dateFilter, descriptionFilter, searchTerm]);
+  }, [jobs, dateFilter, sourceFilter, descriptionFilter, searchTerm]);
 
 
 
@@ -333,6 +342,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
       "Date",
       "Company",
       "Job Title",
+      "Source",
       "Site URL",
       "Match Score",
       "Description",
@@ -359,6 +369,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
       }),
       job.company,
       job.title,
+      job.source === "ziprecruiter" ? "ZipRecruiter" : "Jobright",
       job.externalUrl,
       job.jobrightMatchScore ? `${job.jobrightMatchScore}%` : "N/A",
       job.hasDescription ? "Yes" : "No",
@@ -424,6 +435,26 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
               <option value="today">Today</option>
               <option value="week">Last 7 Days</option>
               <option value="month">Last 30 Days</option>
+            </select>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <label htmlFor="sourceFilter" style={{ fontWeight: 500 }}>
+              Source:
+            </label>
+            <select
+              id="sourceFilter"
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value)}
+              style={{
+                padding: "0.5rem",
+                border: "1px solid #d1d5db",
+                borderRadius: "4px",
+                fontSize: "0.875rem",
+              }}
+            >
+              <option value="all">All</option>
+              <option value="jobright">Jobright</option>
+              <option value="ziprecruiter">ZipRecruiter</option>
             </select>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -561,8 +592,9 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
         <thead style={{ backgroundColor: "#f3f4f6" }}>
           <tr>
             <th style={{ textAlign: "left", padding: "0.75rem" }}>Date</th>
-            <th style={{ textAlign: "left", padding: "0.75rem" }}>Company</th>
-            <th style={{ textAlign: "left", padding: "0.75rem" }}>Job Title</th>
+            <th style={{ textAlign: "left", padding: "0.75rem", maxWidth: "150px" }}>Company</th>
+            <th style={{ textAlign: "left", padding: "0.75rem", maxWidth: "200px" }}>Job Title</th>
+            <th style={{ textAlign: "left", padding: "0.75rem" }}>Source</th>
             <th style={{ textAlign: "left", padding: "0.75rem" }}>Site URL</th>
             <th style={{ textAlign: "left", padding: "0.75rem" }}>Docs</th>
             <th style={{ textAlign: "left", padding: "0.75rem" }}>Match Score</th>
@@ -578,13 +610,31 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
             </td>
 
             {/* Company */}
-            <td style={{ padding: "0.75rem" }}>
+            <td style={{ padding: "0.75rem", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {job.company}
             </td>
 
             {/* Job Title */}
-            <td style={{ padding: "0.75rem" }}>
+            <td style={{ padding: "0.75rem", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {job.title}
+            </td>
+
+            {/* Source */}
+            <td style={{ padding: "0.75rem" }}>
+              <span
+                style={{
+                  display: "inline-block",
+                  padding: "0.2rem 0.5rem",
+                  borderRadius: "4px",
+                  fontSize: "0.75rem",
+                  fontWeight: 500,
+                  backgroundColor:
+                    (job.source || "jobright") === "ziprecruiter" ? "#e0e7ff" : "#dbeafe",
+                  color: (job.source || "jobright") === "ziprecruiter" ? "#3730a3" : "#1e40af",
+                }}
+              >
+                {job.source === "ziprecruiter" ? "ZipRecruiter" : "Jobright"}
+              </span>
             </td>
 
             {/* Site URL */}

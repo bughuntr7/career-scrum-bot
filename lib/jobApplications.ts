@@ -4,6 +4,7 @@ import { prisma } from "./prisma";
 
 export async function upsertJobApplication(params: {
   userId: number;
+  source?: string;  // jobright, ziprecruiter, etc. (default: jobright)
   title: string;
   company: string;
   externalUrl: string;
@@ -15,6 +16,7 @@ export async function upsertJobApplication(params: {
 }) {
   const {
     userId,
+    source = "jobright",
     title,
     company,
     externalUrl,
@@ -51,6 +53,7 @@ export async function upsertJobApplication(params: {
     return prisma.jobApplication.update({
       where: { id: existing.id },
       data: {
+        source,
         title,
         company,
         jobrightUrl,
@@ -65,6 +68,7 @@ export async function upsertJobApplication(params: {
     return prisma.jobApplication.create({
       data: {
         userId,
+        source,
         title,
         company,
         externalUrl,

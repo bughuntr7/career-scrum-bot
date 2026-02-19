@@ -4,7 +4,6 @@ import * as path from "path";
 
 import { upsertJobApplication } from "../lib/jobApplications";
 import { prisma } from "../lib/prisma";
-import { generateResumeAndCoverLetter } from "../lib/generateDocuments";
 
 const JOBRIGHT_RECOMMEND_URL = "https://jobright.ai/jobs/recommend";
 
@@ -28,8 +27,7 @@ function expandPath(dir: string | undefined): string {
 const PERSISTENT_CONTEXT_DIR = expandPath(process.env.JOBRIGHT_CONTEXT_DIR);
 const MAX_JOBS_PER_RUN = Number(process.env.MAX_JOBS ?? 1);
 const USER_ID = Number(process.env.JOBBOT_USER_ID ?? 1);
-// Default to true - can be disabled via environment variable or UI
-const AUTO_GENERATE_DOCUMENTS = process.env.AUTO_GENERATE_DOCUMENTS !== "false";
+// Scan phase only saves URL + job description; run docs:backfill or docs:backfill:chatgpt-ui for resume/cover
 // Minimum Jobright match score (0–100) required to process a job
 const MATCH_SCORE_THRESHOLD = Number(process.env.MATCH_SCORE_THRESHOLD ?? 80);
 
@@ -394,6 +392,46 @@ async function dismissApplyModal(page: Page) {
   }
 }
 
+/** Returns true if text looks like EEO/voluntary disclosure form (disability status, etc.) rather than job description. */
+function looksLikeEeoOrApplicationForm(text: string): boolean {
+  if (!text || text.length < 100) return false;
+  const lower = text.toLowerCase();
+  const eeoMarkers = [
+    "disability status",
+    "please select",
+    "voluntary self-identification",
+    "equal employment opportunity",
+    "race/ethnicity",
+    "veteran status",
+    "alcohol or other substance use disorder",
+    "autoimmune disorder",
+    "blind or low vision",
+    "cancer (past or present)",
+    "cardiovascular or heart disease",
+    "celiac disease",
+    "cerebral palsy",
+    "deaf or serious difficulty hearing",
+    "disfigurement",
+    "epilepsy or other seizure disorder",
+    "gastrointestinal disorders",
+    "intellectual or developmental disability",
+    "mental health conditions",
+    "missing limbs or partially missing limbs",
+    "mobility impairment",
+    "nervous system condition",
+    "neurodivergence",
+    "partial or complete paralysis",
+    "pulmonary or respiratory conditions",
+    "short stature (dwarfism)",
+    "traumatic brain injury",
+  ];
+  const matchCount = eeoMarkers.filter((m) => lower.includes(m)).length;
+  // If 2+ EEO markers or "Disability Status" + "Please select", treat as form content
+  if (matchCount >= 2) return true;
+  if (lower.includes("disability status") && lower.includes("please select")) return true;
+  return false;
+}
+
 // Extract job description from external company site
 async function extractJobDescription(targetPage: Page): Promise<string> {
   try {
@@ -629,13 +667,14 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
               lowerText.includes("we are looking") ||
               lowerText.includes("looking for");
             
-            // Reject if it's clearly not a job description
-            const isIrrelevant = 
+            // Reject if it's clearly not a job description (including EEO/voluntary disclosure forms)
+            const isIrrelevant =
               lowerText.includes("cookie policy") ||
               lowerText.includes("privacy policy") ||
               lowerText.includes("terms of service") ||
               lowerText.includes("follow us on") ||
-              lowerText.length < 150; // Lower threshold - be more lenient
+              lowerText.length < 150 ||
+              looksLikeEeoOrApplicationForm(text);
             
             // Accept if it has job keywords OR if it's substantial text (might be a job description without obvious keywords)
             const isAcceptable = (hasJobKeywords || text.length > 500) && !isIrrelevant;
@@ -652,9 +691,11 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
 
     // Lower threshold - be more lenient to catch more descriptions
     const minLength = 200;
-    if (bestMatch.text && bestMatch.length > minLength) {
+    if (bestMatch.text && bestMatch.length > minLength && !looksLikeEeoOrApplicationForm(bestMatch.text)) {
       descriptionText = bestMatch.text;
       console.log(`  ✓ Found description using selector: ${bestMatch.selector} (${bestMatch.length} chars)`);
+    } else if (bestMatch.text && looksLikeEeoOrApplicationForm(bestMatch.text)) {
+      console.log(`  ⚠️  Rejected: content looks like EEO/application form, not job description`);
     }
 
     // Strategy 2: If no good match, try extracting from main/article with smart filtering
@@ -688,8 +729,8 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
                   "who we are", "what sets us apart"
                 ].filter(kw => lowerText.includes(kw)).length;
                 
-                // Accept if has keywords OR if substantial length
-                if (jobKeywordCount >= 1 || text.length > 600) {
+                // Accept if has keywords OR if substantial length, and not EEO/form content
+                if ((jobKeywordCount >= 1 || text.length > 600) && !looksLikeEeoOrApplicationForm(text)) {
                   descriptionText = text.trim();
                   console.log(`  ✓ Found description from main content (${descriptionText.length} chars, ${jobKeywordCount} keywords)`);
                   break;
@@ -904,6 +945,7 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
             // Split into paragraphs and score each
             const paragraphs = bodyText.split(/\n\s*\n/).filter(p => p.trim().length > 100);
             for (const para of paragraphs) {
+              if (looksLikeEeoOrApplicationForm(para)) continue;
               const lower = para.toLowerCase();
               const keywordCount = jobKeywords.filter(kw => lower.includes(kw)).length;
               const score = keywordCount * 100 + para.length;
@@ -924,12 +966,15 @@ async function extractJobDescription(targetPage: Page): Promise<string> {
       }
     }
 
-    // Final validation: ensure we have a substantial, quality description
-    // Be more lenient - accept if substantial length OR has job keywords
+    // Final validation: ensure we have a substantial, quality description and not EEO/form content
     const minFinalLength = 200;
     if (descriptionText && descriptionText.length >= minFinalLength) {
+      if (looksLikeEeoOrApplicationForm(descriptionText)) {
+        console.warn(`  ⚠️  Rejected: extracted content looks like EEO/application form, not job description`);
+        return "";
+      }
       const lowerText = descriptionText.toLowerCase();
-      const hasJobContent = 
+      const hasJobContent =
         lowerText.includes("responsibilities") ||
         lowerText.includes("requirements") ||
         lowerText.includes("qualifications") ||
@@ -1875,38 +1920,29 @@ async function main() {
       consecutiveSkips++;
       console.log(`  ⏭️  SKIPPING: No apply button found (${consecutiveSkips} in a row)`);
       console.log(`  📊 Summary: Checked ${debugButtons.length} buttons, none matched criteria`);
-      
-      // Every job card should have an apply button, so if we find 0 buttons,
-      // it's likely a loading/rendering issue - immediately hard refresh
-      console.log(`  🔄 Hard refreshing recommend page (no apply button found - likely loading issue)...`);
-      try {
-        // Ensure we're on the recommend page
-        if (page.url().includes("jobright.ai/jobs/recommend")) {
-          // Use domcontentloaded instead of networkidle to avoid timeout issues
-          // The page visually refreshes but networkidle may never fire if there are ongoing requests
-          await page.reload({ waitUntil: "domcontentloaded", timeout: 30000 });
-          await page.waitForTimeout(3000); // Wait for cards to load
-          console.log(`  ✅ Page refreshed, re-fetching job cards and starting from first card...`);
-          // Reset card index to start from the beginning after refresh
-          cardIndex = 0;
-          consecutiveSkips = 0; // Reset skip counter after refresh
-          continue; // Restart the loop - will re-fetch cards at the top of the loop
-        } else {
-          // Navigate to recommend page if we're not there
-          await safeNavigate(page, JOBRIGHT_RECOMMEND_URL, { maxRetries: 2, waitAfter: 3000 });
-          console.log(`  ✅ Navigated to recommend page, re-fetching job cards and starting from first card...`);
-          cardIndex = 0;
+      cardIndex++;
+      // Only refresh when many cards in a row have no button (likely loading issue); otherwise advance to next card
+      if (consecutiveSkips >= 3) {
+        console.log(`  🔄 Hard refreshing (${consecutiveSkips} no-button cards in a row)...`);
+        try {
+          if (page.url().includes("jobright.ai/jobs/recommend")) {
+            await page.reload({ waitUntil: "domcontentloaded", timeout: 30000 });
+            await page.waitForTimeout(3000);
+            console.log(`  ✅ Page refreshed, re-fetching job cards.`);
+            cardIndex = 0;
+            consecutiveSkips = 0;
+          } else {
+            await safeNavigate(page, JOBRIGHT_RECOMMEND_URL, { maxRetries: 2, waitAfter: 3000 });
+            cardIndex = 0;
+            consecutiveSkips = 0;
+          }
+        } catch (refreshError: any) {
+          console.warn(`  ⚠️  Refresh failed: ${(refreshError as Error).message}`);
           consecutiveSkips = 0;
-          continue;
+          await page.waitForTimeout(2000);
         }
-      } catch (refreshError: any) {
-        console.warn(`  ⚠️  Failed to refresh page: ${refreshError.message}`);
-        // If refresh fails, try to continue anyway - maybe cards will load on next iteration
-        cardIndex = 0; // Still reset to start from beginning
-        consecutiveSkips = 0;
-        await page.waitForTimeout(2000); // Brief wait before retrying
-        continue; // Restart loop to re-fetch cards
       }
+      continue;
     }
     
     // Reset skip counter when we find a valid card
@@ -1950,11 +1986,15 @@ async function main() {
     cardIndex++;
     
     if (!result) {
-      // Still try to dismiss modal even if we didn't get a URL
+      // LinkedIn/Lever skip or could not capture URL: dismiss modal ("Yes, I applied!") and refresh
+      // so the card is removed from the list and the next card has proper buttons
       await dismissApplyModal(page);
       skippedCount++;
-      console.log(`  ⏭️  Skipped: Could not capture URL`);
+      console.log(`  ⏭️  Skipped: Could not capture URL (e.g. LinkedIn/Lever or no URL)`);
       await page.waitForTimeout(500);
+      console.log(`  🔄 Refreshing recommend page after skip...`);
+      await safeNavigate(page, JOBRIGHT_RECOMMEND_URL, { maxRetries: 2, waitAfter: 3000 });
+      cardIndex = 0; // Re-fetch cards from top after refresh
       continue;
     }
 
@@ -1983,6 +2023,9 @@ async function main() {
       await dismissApplyModal(page);
       skippedCount++;
       await page.waitForTimeout(500);
+      console.log(`  🔄 Refreshing recommend page after duplicate skip...`);
+      await safeNavigate(page, JOBRIGHT_RECOMMEND_URL, { maxRetries: 2, waitAfter: 3000 });
+      cardIndex = 0; // Re-fetch cards from top after refresh
       continue;
     }
 
@@ -2011,6 +2054,7 @@ async function main() {
       
       const savedJob = await upsertJobApplication({
         userId: actualUserId,
+        source: "jobright",
         title: meta.title,
         company: meta.company,
         location: meta.location,
@@ -2021,42 +2065,12 @@ async function main() {
       processedCount++;
       console.log(`  ✅ Saved: ${meta.title} at ${meta.company}`);
       
-      // Save job description if we captured one
+      // Save job description if we captured one (scan phase does not generate resume/cover letter; use docs:backfill or docs:backfill:chatgpt-ui)
       if (description && description.length > 0) {
         await saveJobDescription(savedJob.id, description);
         console.log(`  ✅ Job description saved (${description.length} chars)`);
-        
-        // Auto-generate resume and cover letter if enabled
-        console.log(`  📋 AUTO_GENERATE_DOCUMENTS: ${AUTO_GENERATE_DOCUMENTS} (env: ${process.env.AUTO_GENERATE_DOCUMENTS})`);
-        if (AUTO_GENERATE_DOCUMENTS) {
-          // Only generate if description is substantial (at least 300 chars)
-          if (description.length >= 300) {
-            try {
-              console.log(`  🤖 Generating tailored resume and cover letter for job ${savedJob.id}...`);
-              console.log(`     Company: ${meta.company}, Role: ${meta.title}`);
-              const result = await generateResumeAndCoverLetter(savedJob.id, {
-                model: process.env.OPENAI_MODEL || "gpt-4",
-                outputDir: process.env.RESUMES_OUTPUT_DIR || "Resumes",
-                saveToDatabase: true,
-              });
-              console.log(`  ✅ Documents generated successfully:`);
-              console.log(`     Resume: ${result.resumePath}`);
-              console.log(`     Cover Letter: ${result.coverLetterPath}`);
-            } catch (error: any) {
-              console.error(`  ❌ Failed to generate documents: ${error.message}`);
-              if (error.stack) {
-                console.error(`     Stack: ${error.stack.split('\n').slice(0, 5).join('\n')}`);
-              }
-              // Don't fail the entire scan if document generation fails
-            }
-          } else {
-            console.log(`  ⚠️  Job description too short (${description.length} chars), skipping document generation (need >= 300)`);
-          }
-        } else {
-          console.log(`  ⏭️  Document generation is disabled (AUTO_GENERATE_DOCUMENTS=false)`);
-        }
       } else {
-        console.log(`  ⚠️  No job description captured, skipping document generation`);
+        console.log(`  ⚠️  No job description captured`);
       }
       
       // After successfully processing a job and clicking "Yes, I applied!", 

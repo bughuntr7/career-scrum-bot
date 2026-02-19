@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { generateTailoredResume, generateCoverLetter, PROMPT_VERSION } from "./llmService";
+import { generateResumeAndCoverLetterViaChatGPTUi } from "./chatgptUiClient";
 import {
   saveResumeAsDocx,
   saveCoverLetterAsDocx,
@@ -13,6 +14,9 @@ import * as fs from "fs";
 // Use dynamic import for mammoth
 const mammoth = require("mammoth");
 
+/** Use ChatGPT web UI instead of OpenAI API when set to "chatgpt-ui" (env or options.source) */
+const DEFAULT_DOC_SOURCE = (process.env.DOC_GENERATION_SOURCE || "openai-api") as string;
+
 export async function generateResumeAndCoverLetter(
   jobApplicationId: number,
   options: {
@@ -21,6 +25,10 @@ export async function generateResumeAndCoverLetter(
     saveToDatabase?: boolean;
     resumeTemplatePath?: string;
     coverLetterTemplatePath?: string;
+    /** "openai-api" (default) or "chatgpt-ui". Overrides DOC_GENERATION_SOURCE when set. */
+    source?: "openai-api" | "chatgpt-ui";
+    /** Only for source=chatgpt-ui: called when sign-in is required (e.g. wait for user to press Enter in CLI) */
+    onChatGPTSignInRequired?: () => Promise<void>;
   } = {}
 ): Promise<{
   resumePath: string;
@@ -35,7 +43,12 @@ export async function generateResumeAndCoverLetter(
     saveToDatabase = true,
     resumeTemplatePath,
     coverLetterTemplatePath,
+    source = DEFAULT_DOC_SOURCE as "openai-api" | "chatgpt-ui",
+    onChatGPTSignInRequired,
   } = options;
+
+  const useChatGPTUi = source === "chatgpt-ui";
+  const effectiveModel = useChatGPTUi ? "chatgpt-ui" : model;
 
   // Fetch job application and related data
   const jobApplication = await prisma.jobApplication.findUnique({
@@ -80,29 +93,27 @@ export async function generateResumeAndCoverLetter(
   const parsedResume = parseResumeText(baseResumeText);
   console.log(`📋 Parsed resume: ${parsedResume.workExperiences.length} work experiences, Education preserved`);
 
-  // Generate tailored resume (excluding Education)
-  console.log(`🤖 Generating tailored resume for ${company} - ${role}...`);
-  const tailoredResumeText = await generateTailoredResume(
-    baseResumeText,
-    jobDescription,
-    model
-  );
-  
+  let tailoredResumeText: string;
+  let coverLetterText: string;
+
+  if (useChatGPTUi) {
+    console.log(`🤖 Generating resume + cover letter via ChatGPT UI for ${company} - ${role}...`);
+    const result = await generateResumeAndCoverLetterViaChatGPTUi(
+      { baseResumeText, jobDescription, company, role },
+      { onSignInRequired: onChatGPTSignInRequired }
+    );
+    tailoredResumeText = result.resumeText;
+    coverLetterText = result.coverLetterText;
+  } else {
+    console.log(`🤖 Generating tailored resume for ${company} - ${role}...`);
+    tailoredResumeText = await generateTailoredResume(baseResumeText, jobDescription, model);
+    console.log(`🤖 Generating cover letter for ${company} - ${role}...`);
+    coverLetterText = await generateCoverLetter(baseResumeText, jobDescription, company, role, model);
+  }
+
   // Parse the tailored resume to extract sections (excluding Education)
   const tailoredParsed = parseResumeText(tailoredResumeText);
-  
-  // Preserve original Education section
   tailoredParsed.education = parsedResume.education;
-
-  // Generate cover letter
-  console.log(`🤖 Generating cover letter for ${company} - ${role}...`);
-  const coverLetterText = await generateCoverLetter(
-    baseResumeText,
-    jobDescription,
-    company,
-    role,
-    model
-  );
 
   // Save documents to filesystem (using templates to preserve styling)
   // Pass parsed resume sections to replace placeholders in template
@@ -169,7 +180,7 @@ export async function generateResumeAndCoverLetter(
       data: {
         jobApplicationId,
         baseResumeId: baseResume.id,
-        llmModel: model,
+        llmModel: effectiveModel,
         promptVersion: PROMPT_VERSION,
         outputText: tailoredResumeText,
       },
@@ -181,7 +192,7 @@ export async function generateResumeAndCoverLetter(
       data: {
         jobApplicationId,
         baseResumeId: baseResume.id,
-        llmModel: model,
+        llmModel: effectiveModel,
         promptVersion: PROMPT_VERSION,
         outputText: coverLetterText,
       },
