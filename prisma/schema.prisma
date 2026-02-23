@@ -57,7 +57,7 @@ model JobApplication {
   jobrightMatchScore Float?
   jobrightBoard      String?           @db.VarChar(50)
   jobrightUrl        String?           @db.VarChar(500)
-  externalUrl        String            @db.VarChar(500)
+  externalUrl        String            @db.VarChar(2048)
   status             ApplicationStatus @default(SAVED)
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt

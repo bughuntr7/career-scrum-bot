@@ -2,6 +2,7 @@ import { chromium, BrowserContext, Page } from "playwright";
 import * as fs from "fs";
 import * as path from "path";
 
+import { findDuplicateJob } from "../lib/jobDuplicateDetection";
 import { upsertJobApplication } from "../lib/jobApplications";
 import { prisma } from "../lib/prisma";
 
@@ -2010,16 +2011,16 @@ async function main() {
       console.log(`  ⚠️  No job description captured`);
     }
 
-    // Check for duplicate in database by title + company before saving
-    const existing = await prisma.jobApplication.findFirst({
-      where: {
-        title: meta.title,
-        company: meta.company,
-      },
+    // Duplicate check: same algorithm as manual add & ZipRecruiter (normalized URL / title+company)
+    const duplicate = await findDuplicateJob({
+      userId: actualUserId,
+      externalUrl: applyUrl,
+      title: meta.title,
+      company: meta.company,
     });
 
-    if (existing) {
-      console.log(`  ⏭️  Skipping duplicate in DB: ${meta.title} at ${meta.company}`);
+    if (duplicate) {
+      console.log(`  ⏭️  Skipping duplicate (${duplicate.reason}): ${meta.title} at ${meta.company}`);
       await dismissApplyModal(page);
       skippedCount++;
       await page.waitForTimeout(500);

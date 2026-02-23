@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const DEFAULT_PAGE_SIZE = 25;
 
 type Job = {
   id: number;
@@ -15,6 +18,29 @@ type Job = {
   hasResume: boolean;
   hasCoverLetter: boolean;
 };
+
+const SOURCE_OPTIONS = [
+  { value: "ziprecruiter", label: "ZipRecruiter" },
+  { value: "jobright", label: "Jobright" },
+  { value: "otta", label: "Otta" },
+  { value: "simplify", label: "Simplify" },
+  { value: "dice", label: "Dice" },
+  { value: "glassdoor", label: "Glassdoor" },
+] as const;
+
+function getSourceLabel(source: string | null | undefined): string {
+  if (!source) return "Jobright";
+  const opt = SOURCE_OPTIONS.find((o) => o.value === source);
+  return opt ? opt.label : source;
+}
+
+/** Format for UI: "2/10 11:12" (month/day hour:minute) */
+function formatJobDateTime(isoString: string): string {
+  const d = new Date(isoString);
+  const datePart = d.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
+  const timePart = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+  return `${datePart} ${timePart}`;
+}
 
 export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
   const [jobs, setJobs] = useState(initialJobs);
@@ -35,6 +61,17 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
   const [scanCount, setScanCount] = useState<number>(5); // Default to 5 jobs
   const [generatingDocsForId, setGeneratingDocsForId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [showAddManual, setShowAddManual] = useState(false);
+  const [addForm, setAddForm] = useState({
+    title: "",
+    company: "",
+    externalUrl: "",
+    description: "",
+    source: "ziprecruiter",
+  });
+  const [addingJob, setAddingJob] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const handleEdit = async (job: Job) => {
     setEditingId(job.id);
@@ -117,6 +154,63 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
   const handleCancel = () => {
     setEditingId(null);
     setEditForm({ title: "", company: "", externalUrl: "", description: "" });
+  };
+
+  const handleAddJobManual = async () => {
+    if (!addForm.externalUrl.trim() || !addForm.description.trim()) {
+      alert("URL and Job description are required.");
+      return;
+    }
+    setAddingJob(true);
+    try {
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: addForm.title.trim() || "Unknown",
+          company: addForm.company.trim() || "Unknown",
+          externalUrl: addForm.externalUrl.trim(),
+          jobDescription: addForm.description.trim(),
+          source: addForm.source,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 409 && data.duplicate) {
+        setShowAddManual(false);
+        setAddForm({ title: "", company: "", externalUrl: "", description: "", source: "ziprecruiter" });
+        const listRes = await fetch(`/api/jobs?_=${Date.now()}`, { cache: "no-store" });
+        if (listRes.ok) setJobs(await listRes.json());
+        const detail = data.existingLabel ? `\n\nExisting: ${data.existingLabel}` : "";
+        alert(`⚠️ Duplicate job\n\n${data.message || "This job already exists in your list."}${detail}`);
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to add job");
+      }
+      const newJob = data;
+      const listRes = await fetch(`/api/jobs?_=${Date.now()}`, { cache: "no-store" });
+      if (listRes.ok) {
+        const list = await listRes.json();
+        setJobs(list);
+        setDateFilter("all");
+        setSourceFilter("all");
+        setDescriptionFilter("all");
+        setSearchTerm("");
+      } else {
+        setJobs((prev) => [newJob, ...prev]);
+        setDateFilter("all");
+        setSourceFilter("all");
+      }
+      setShowAddManual(false);
+      setAddForm({ title: "", company: "", externalUrl: "", description: "", source: "ziprecruiter" });
+      alert("✅ Job added. You can generate resume & cover letter from the Actions column.");
+    } catch (e: any) {
+      alert(`❌ ${e.message || "Failed to add job"}`);
+    } finally {
+      setAddingJob(false);
+    }
   };
 
   const handleGenerateDocs = async (job: Job) => {
@@ -241,7 +335,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
     if (searchTerm.trim()) {
       const query = searchTerm.toLowerCase();
       filtered = filtered.filter((job) => {
-        const dateStr = new Date(job.createdAt).toLocaleDateString().toLowerCase();
+        const dateStr = formatJobDateTime(job.createdAt).toLowerCase();
         const company = job.company.toLowerCase();
         const title = job.title.toLowerCase();
         const source = (job.source || "").toLowerCase();
@@ -262,7 +356,23 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
     return filtered;
   }, [jobs, dateFilter, sourceFilter, descriptionFilter, searchTerm]);
 
+  const totalFiltered = filteredJobs.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const paginatedJobs = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredJobs.slice(start, start + pageSize);
+  }, [filteredJobs, page, pageSize]);
 
+  useEffect(() => {
+    if (page > totalPages) setPage(1);
+  }, [page, totalPages]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [dateFilter, sourceFilter, descriptionFilter, searchTerm, pageSize]);
+
+  const rangeStart = totalFiltered === 0 ? 0 : (page - 1) * pageSize + 1;
+  const rangeEnd = Math.min(page * pageSize, totalFiltered);
 
   // Trigger job scan
   const handleScanJobs = async () => {
@@ -362,14 +472,10 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
     };
 
     const rows = filteredJobs.map((job) => [
-      new Date(job.createdAt).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }),
+      formatJobDateTime(job.createdAt),
       job.company,
       job.title,
-      job.source === "ziprecruiter" ? "ZipRecruiter" : "Jobright",
+      getSourceLabel(job.source),
       job.externalUrl,
       job.jobrightMatchScore ? `${job.jobrightMatchScore}%` : "N/A",
       job.hasDescription ? "Yes" : "No",
@@ -377,10 +483,13 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
       job.hasCoverLetter ? "Yes" : "No",
     ]);
 
-    // Build CSV content with proper escaping
+    const quoteForCSV = (val: string) => `"${String(val).replace(/"/g, '""')}"`;
+    const rowToCSVLine = (row: any[]) =>
+      row.map((cell, i) => (i === 0 ? quoteForCSV(cell) : escapeCSV(cell))).join(",");
+
     const csvContent = [
       headers.map(escapeCSV).join(","),
-      ...rows.map((row) => row.map(escapeCSV).join(",")),
+      ...rows.map(rowToCSVLine),
     ].join("\n");
 
     // Add BOM for Excel compatibility (UTF-8 BOM)
@@ -453,8 +562,9 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
               }}
             >
               <option value="all">All</option>
-              <option value="jobright">Jobright</option>
-              <option value="ziprecruiter">ZipRecruiter</option>
+              {SOURCE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
             </select>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -498,7 +608,11 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
             />
           </div>
           <span style={{ color: "#6b7280", fontSize: "0.875rem" }}>
-            ({filteredJobs.length} {filteredJobs.length === 1 ? "job" : "jobs"})
+            {totalFiltered === 0
+              ? "(0 jobs)"
+              : totalPages > 1
+                ? `(${rangeStart}–${rangeEnd} of ${totalFiltered} jobs)`
+                : `(${totalFiltered} ${totalFiltered === 1 ? "job" : "jobs"})`}
           </span>
         </div>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
@@ -546,6 +660,23 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
             {scanning ? "⏳ Scanning..." : "🔍 Scan Jobs"}
           </button>
           <button
+            onClick={() => setShowAddManual(true)}
+            style={{
+              padding: "0.5rem 1rem",
+              backgroundColor: "#8b5cf6",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontWeight: 500,
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+            }}
+          >
+            ➕ Add job (manual)
+          </button>
+          <button
             onClick={handleExportCSV}
             style={{
               padding: "0.5rem 1rem",
@@ -579,6 +710,81 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
         </div>
       )}
 
+      {/* Pagination (top) */}
+      {totalFiltered > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "1rem",
+            marginBottom: "1rem",
+            padding: "0.75rem 0",
+            borderBottom: "1px solid #e5e7eb",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+              Showing {rangeStart}–{rangeEnd} of {totalFiltered}
+            </span>
+            <label htmlFor="pageSizeTop" style={{ fontSize: "0.875rem", fontWeight: 500 }}>
+              Per page:
+            </label>
+            <select
+              id="pageSizeTop"
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              style={{
+                padding: "0.35rem 0.5rem",
+                border: "1px solid #d1d5db",
+                borderRadius: "4px",
+                fontSize: "0.875rem",
+              }}
+            >
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              style={{
+                padding: "0.35rem 0.75rem",
+                border: "1px solid #d1d5db",
+                borderRadius: "4px",
+                backgroundColor: page <= 1 ? "#f3f4f6" : "white",
+                cursor: page <= 1 ? "not-allowed" : "pointer",
+                fontSize: "0.875rem",
+              }}
+            >
+              Previous
+            </button>
+            <span style={{ padding: "0 0.5rem", fontSize: "0.875rem" }}>
+              Page {page} of {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              style={{
+                padding: "0.35rem 0.75rem",
+                border: "1px solid #d1d5db",
+                borderRadius: "4px",
+                backgroundColor: page >= totalPages ? "#f3f4f6" : "white",
+                cursor: page >= totalPages ? "not-allowed" : "pointer",
+                fontSize: "0.875rem",
+              }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
       <table
         style={{
           width: "100%",
@@ -602,11 +808,11 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
           </tr>
         </thead>
         <tbody>
-          {filteredJobs.map((job) => (
+          {paginatedJobs.map((job) => (
           <tr key={job.id} style={{ borderTop: "1px solid #e5e7eb" }}>
             {/* Date */}
             <td style={{ padding: "0.75rem" }}>
-              {new Date(job.createdAt).toLocaleDateString()}
+              {formatJobDateTime(job.createdAt)}
             </td>
 
             {/* Company */}
@@ -628,12 +834,11 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
                   borderRadius: "4px",
                   fontSize: "0.75rem",
                   fontWeight: 500,
-                  backgroundColor:
-                    (job.source || "jobright") === "ziprecruiter" ? "#e0e7ff" : "#dbeafe",
-                  color: (job.source || "jobright") === "ziprecruiter" ? "#3730a3" : "#1e40af",
+                  backgroundColor: "#e5e7eb",
+                  color: "#374151",
                 }}
               >
-                {job.source === "ziprecruiter" ? "ZipRecruiter" : "Jobright"}
+                {getSourceLabel(job.source)}
               </span>
             </td>
 
@@ -788,7 +993,214 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
       </tbody>
     </table>
 
+    {/* Pagination */}
+    {totalFiltered > 0 && (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "1rem",
+          marginTop: "1rem",
+          padding: "0.75rem 0",
+          borderTop: "1px solid #e5e7eb",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+            Showing {rangeStart}–{rangeEnd} of {totalFiltered}
+          </span>
+          <label htmlFor="pageSize" style={{ fontSize: "0.875rem", fontWeight: 500 }}>
+            Per page:
+          </label>
+          <select
+            id="pageSize"
+            value={pageSize}
+            onChange={(e) => setPageSize(Number(e.target.value))}
+            style={{
+              padding: "0.35rem 0.5rem",
+              border: "1px solid #d1d5db",
+              borderRadius: "4px",
+              fontSize: "0.875rem",
+            }}
+          >
+            {PAGE_SIZE_OPTIONS.map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            style={{
+              padding: "0.35rem 0.75rem",
+              border: "1px solid #d1d5db",
+              borderRadius: "4px",
+              backgroundColor: page <= 1 ? "#f3f4f6" : "white",
+              cursor: page <= 1 ? "not-allowed" : "pointer",
+              fontSize: "0.875rem",
+            }}
+          >
+            Previous
+          </button>
+          <span style={{ padding: "0 0.5rem", fontSize: "0.875rem" }}>
+            Page {page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            style={{
+              padding: "0.35rem 0.75rem",
+              border: "1px solid #d1d5db",
+              borderRadius: "4px",
+              backgroundColor: page >= totalPages ? "#f3f4f6" : "white",
+              cursor: page >= totalPages ? "not-allowed" : "pointer",
+              fontSize: "0.875rem",
+            }}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    )}
+
     {/* Edit Job Modal */}
+    {/* Add job (manual) modal – e.g. from ZipRecruiter: surf, copy URL + description, add here; then generate docs */}
+    {showAddManual && (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1001,
+        }}
+        onClick={() => !addingJob && setShowAddManual(false)}
+      >
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "8px",
+            padding: "2rem",
+            maxWidth: "900px",
+            maxHeight: "90vh",
+            width: "90%",
+            display: "flex",
+            flexDirection: "column",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            overflow: "hidden",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 style={{ marginTop: 0, marginBottom: "0.5rem", fontSize: "1.5rem", fontWeight: 600 }}>
+            Add job (manual)
+          </h2>
+          <p style={{ marginBottom: "1.5rem", color: "#6b7280", fontSize: "0.875rem" }}>
+            Surf ZipRecruiter (or any site), copy the job URL and description, then paste below. After saving, use &quot;Generate docs&quot; in the table to create resume and cover letter.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem", overflow: "auto", flex: 1 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500, fontSize: "0.875rem" }}>Job Title</label>
+                <input
+                  type="text"
+                  value={addForm.title}
+                  onChange={(e) => setAddForm({ ...addForm, title: e.target.value })}
+                  placeholder="e.g. Software Engineer"
+                  style={{ width: "100%", padding: "0.75rem", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "0.875rem" }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500, fontSize: "0.875rem" }}>Company</label>
+                <input
+                  type="text"
+                  value={addForm.company}
+                  onChange={(e) => setAddForm({ ...addForm, company: e.target.value })}
+                  placeholder="e.g. Acme Inc."
+                  style={{ width: "100%", padding: "0.75rem", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "0.875rem" }}
+                />
+              </div>
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500, fontSize: "0.875rem" }}>Job URL *</label>
+              <input
+                type="url"
+                value={addForm.externalUrl}
+                onChange={(e) => setAddForm({ ...addForm, externalUrl: e.target.value })}
+                placeholder="https://..."
+                style={{ width: "100%", padding: "0.75rem", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "0.875rem" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500, fontSize: "0.875rem" }}>Source</label>
+              <select
+                value={addForm.source}
+                onChange={(e) => setAddForm({ ...addForm, source: e.target.value })}
+                style={{ padding: "0.5rem", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "0.875rem" }}
+              >
+                {SOURCE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "220px" }}>
+              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500, fontSize: "0.875rem" }}>Job description *</label>
+              <textarea
+                value={addForm.description}
+                onChange={(e) => setAddForm({ ...addForm, description: e.target.value })}
+                placeholder="Paste the full job description here..."
+                style={{
+                  width: "100%",
+                  minHeight: "220px",
+                  padding: "1rem",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "4px",
+                  fontSize: "0.875rem",
+                  fontFamily: "monospace",
+                  resize: "vertical",
+                  flex: 1,
+                }}
+              />
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => !addingJob && setShowAddManual(false)}
+                disabled={addingJob}
+                style={{ padding: "0.5rem 1.5rem", backgroundColor: "#6b7280", color: "white", border: "none", borderRadius: "4px", cursor: addingJob ? "not-allowed" : "pointer", fontSize: "0.875rem", fontWeight: 500 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddJobManual}
+                disabled={addingJob || !addForm.externalUrl.trim() || !addForm.description.trim()}
+                style={{
+                  padding: "0.5rem 1.5rem",
+                  backgroundColor: addingJob || !addForm.externalUrl.trim() || !addForm.description.trim() ? "#9ca3af" : "#8b5cf6",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: addingJob || !addForm.externalUrl.trim() || !addForm.description.trim() ? "not-allowed" : "pointer",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                }}
+              >
+                {addingJob ? "Adding..." : "Add job"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
     {editingId && (
       <div
         style={{

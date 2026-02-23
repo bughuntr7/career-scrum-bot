@@ -1,0 +1,3 @@
+# ZipRecruiter: undetected Chrome via nodriver (bypass Cloudflare, export cookies for Node)
+nodriver>=0.28
+python-dotenv>=1.0.0

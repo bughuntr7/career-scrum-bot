@@ -91,6 +91,14 @@ RESUMES_OUTPUT_DIR=Resumes
 
 # Use ChatGPT web UI instead of OpenAI API for resume/cover letter (no API key needed; log in once: npm run chatgpt:login)
 # DOC_GENERATION_SOURCE=chatgpt-ui
+
+# ZipRecruiter (optional)
+# ZIPRECRUITER_SEARCH_URL=...   # search URL with filters
+# ZIPRECRUITER_MAX_JOBS_PER_RUN=2   # max jobs per scan (only "Apply" jobs; skips "1-Click Apply")
+
+# Glassdoor (optional): bypass Cloudflare with nodriver, then scan. Skip Easy Apply; only "Apply on employer site".
+# python scripts/glassdoor_nodriver.py  →  npm run glassdoor:init  →  npm run glassdoor:scan
+# GLASSDOOR_SEARCH_URL=...   GLASSDOOR_MAX_JOBS_PER_RUN=5
 ```
 
 ### 3. Run Prisma migrations
