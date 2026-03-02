@@ -141,10 +141,14 @@ async function waitForJobDescriptionContent(page: any): Promise<void> {
 async function extractJobDescriptionFromRightPanel(page: any): Promise<string> {
   await waitForJobDescriptionContent(page);
 
-  // Prefer the description body block (div after "Job description" heading); ZipRecruiter often uses whitespace-pre-line for it
+  // Prefer the description body block: h2 "Job description" then div with text-primary + whitespace-pre-line (and often wrap-anywhere)
   const descriptionBodySelectors = [
+    "[data-testid='job-details-scroll-container'] div[class*='whitespace-pre-line'][class*='text-primary']",
+    "[data-testid='right-pane'] div[class*='whitespace-pre-line'][class*='text-primary']",
     "[data-testid='job-details-scroll-container'] div[class*='whitespace-pre-line']",
     "[data-testid='right-pane'] div[class*='whitespace-pre-line']",
+    "[data-testid='job-details-scroll-container'] div[class*='wrap-anywhere'][class*='whitespace-pre-line']",
+    "[data-testid='right-pane'] div[class*='wrap-anywhere'][class*='whitespace-pre-line']",
     "[data-testid='job-details-scroll-container'] div[class*='text-primary']",
     "[data-testid='right-pane'] div[class*='text-primary']",
   ];
@@ -182,11 +186,53 @@ async function extractJobDescriptionFromRightPanel(page: any): Promise<string> {
   return "";
 }
 
-/** Left-pane pagination: container has class pagination_container_two_pane; Next Page button has title="Next Page". */
+/** Left-pane pagination. ZipRecruiter uses an <a title="Next Page"> with href like /jobs-search/2?..., not a button. */
 const PAGINATION_NEXT_SELECTORS = [
+  "a[title='Next Page']",
+  "div.pagination_container_two_pane a[title='Next Page']",
   "div.pagination_container_two_pane button[title='Next Page']",
   "button[title='Next Page']",
+  "button[aria-label='Next Page']",
+  "[aria-label='Next Page']",
+  "a[aria-label*='Next']",
+  "nav a:has-text('Next')",
+  "nav button:has-text('Next')",
+  ".pagination_container_two_pane button:has-text('Next')",
+  "button:has-text('Next')",
+  "a[href*='/jobs-search/']:has-text('Next')",
 ];
+
+/** Get next page URL. ZipRecruiter uses path /jobs-search/1, /jobs-search/2; fallback to ?page=N. */
+function getNextPageUrl(currentUrl: string): string | null {
+  try {
+    const u = new URL(currentUrl);
+    const path = u.pathname;
+    // Path-based: /jobs-search/1 or /jobs-search/2 etc.
+    const pathMatch = path.match(/^(\/jobs-search)\/(\d+)\/?$/);
+    if (pathMatch) {
+      const num = parseInt(pathMatch[2], 10);
+      if (Number.isFinite(num) && num >= 1) {
+        u.pathname = `${pathMatch[1]}/${num + 1}`;
+        return u.toString();
+      }
+    }
+    // Path without number: /jobs-search -> /jobs-search/2
+    if (path.replace(/\/$/, "") === "/jobs-search") {
+      u.pathname = "/jobs-search/2";
+      return u.toString();
+    }
+    // Query-based fallback: ?page=1 -> ?page=2
+    const p = u.searchParams.get("page");
+    const num = p ? parseInt(p, 10) : 1;
+    if (Number.isFinite(num) && num >= 1) {
+      u.searchParams.set("page", String(num + 1));
+      return u.toString();
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 /** Right-pane Apply button selectors (ZipRecruiter). */
 const APPLY_BUTTON_SELECTORS = [
@@ -426,6 +472,8 @@ async function main() {
   let processed = 0;
   let cardIndex = 0;
   const scanStart = Date.now();
+  /** First card (title||company) on current page—used to detect when URL pagination returns the same page. */
+  let firstCardSignature: string | null = null;
 
   while (processed < MAX_JOBS_PER_RUN) {
     const cardLoopStart = Date.now();
@@ -435,7 +483,16 @@ async function main() {
     const cards = await page.locator(usedCardSelector).all();
     step();
     if (cardIndex >= cards.length) {
-      // Try to go to next page (left-pane pagination bar)
+      // Remember first card on this page so we can detect "same page" after URL nav
+      let signatureBeforeNav: string | null = null;
+      if (cards.length > 0) {
+        const c0 = cards[0];
+        const t0 = (await c0.locator("h2, h3, [class*='title']").first().innerText().catch(() => ""))?.trim() || "";
+        const co0 = (await c0.locator("[data-testid='job-card-company'], [class*='company']").first().innerText().catch(() => ""))?.trim() || "";
+        signatureBeforeNav = `${t0}|||${co0}`;
+      }
+
+      // Try to go to next page: first by clicking Next button, then by URL.
       let nextClicked = false;
       for (const sel of PAGINATION_NEXT_SELECTORS) {
         const nextBtn = page.locator(sel).first();
@@ -451,8 +508,39 @@ async function main() {
         await page.locator(usedCardSelector).first().waitFor({ state: "visible", timeout: 15000 }).catch(() => {});
         step();
         cardIndex = 0;
+        firstCardSignature = null; // reset so we don't think next page is "same"
         nextClicked = true;
         break;
+      }
+      // Fallback: paginate by URL (e.g. page=1 -> page=2)
+      if (!nextClicked) {
+        const currentUrl = page.url();
+        const nextUrl = getNextPageUrl(currentUrl);
+        if (nextUrl && nextUrl !== currentUrl) {
+          console.log(`  📄 No Next button found; navigating to next page via URL (page=N+1)...`);
+          console.log(`     URL: ${nextUrl}`);
+          step = logTimed("goto next page URL + wait for cards");
+          await page.goto(nextUrl, { waitUntil: "domcontentloaded", timeout: 60000 }).catch(() => {});
+          const urlAfter = page.url();
+          console.log(`     After load: ${urlAfter}`);
+          await page.waitForTimeout(2000);
+          await page.locator(usedCardSelector).first().waitFor({ state: "visible", timeout: 15000 }).catch(() => {});
+          step();
+          const newCards = await page.locator(usedCardSelector).all();
+          if (newCards.length > 0) {
+            const c0 = newCards[0];
+            const t0 = (await c0.locator("h2, h3, [class*='title']").first().innerText().catch(() => ""))?.trim() || "";
+            const co0 = (await c0.locator("[data-testid='job-card-company'], [class*='company']").first().innerText().catch(() => ""))?.trim() || "";
+            const newFirstSignature = `${t0}|||${co0}`;
+            if (signatureBeforeNav != null && newFirstSignature === signatureBeforeNav) {
+              console.log(`  ⚠️ Same page loaded again (first card unchanged). ZipRecruiter may ignore \`page\` param. Stopping pagination.`);
+              break;
+            }
+            cardIndex = 0;
+            firstCardSignature = newFirstSignature;
+            nextClicked = true;
+          }
+        }
       }
       if (!nextClicked) {
         console.log(`No more cards and no Next Page (or Next disabled). Done.`);

@@ -1645,7 +1645,9 @@ async function main() {
   let skippedCount = 0;
   let cardIndex = 0;
   let consecutiveSkips = 0; // Track consecutive cards without buttons
+  let consecutiveNoCards = 0; // Track consecutive attempts with no cards (all jobs scanned)
   const maxAttempts = MAX_JOBS_PER_RUN * 5; // Allow more attempts to find valid cards
+  const maxConsecutiveNoCards = 5; // Stop after this many retries with no cards (all jobs likely scanned)
   const processedJobs = new Set<string>(); // Track processed title+company combinations
 
   for (let attempt = 0; attempt < maxAttempts && processedCount < MAX_JOBS_PER_RUN; attempt++) {
@@ -1659,10 +1661,16 @@ async function main() {
     // Refresh card list each time to avoid stale references
     const cards = await getJobCards(page);
     if (cards.length === 0) {
+      consecutiveNoCards++;
+      if (consecutiveNoCards >= maxConsecutiveNoCards) {
+        console.log(`\n✅ No job cards found after ${maxConsecutiveNoCards} retries. All jobs from the site may have been scanned. Terminating.`);
+        break;
+      }
       console.warn("No cards found, waiting and retrying...");
       await page.waitForTimeout(2000);
       continue;
     }
+    consecutiveNoCards = 0; // Reset when we find cards
     
     // If we've reached the end, try scrolling to load more cards
     if (cardIndex >= cards.length) {
@@ -1969,12 +1977,23 @@ async function main() {
       continue;
     }
     
-    // Check if we've already processed this job (by title + company)
+    // Check if we've already processed this job (by title + company) in this scan run.
+    // We STILL want to click Apply and mark it as applied on Jobright (so the card disappears),
+    // but we won't save it to the database again.
     const jobKey = `${meta.title}|||${meta.company}`.toLowerCase();
     if (processedJobs.has(jobKey)) {
       console.log(`  ⏭️  Already processed: ${meta.title} at ${meta.company}`);
-      cardIndex++;
+      try {
+        // Click apply and handle navigation/modal, but don't bother with description
+        await clickApplyAndCaptureUrl(context, page, card, { captureDescription: false });
+      } catch (e: any) {
+        console.warn(`  ⚠️  Error while trying to click apply for already-processed job: ${e.message || e}`);
+      }
       skippedCount++;
+      await page.waitForTimeout(500);
+      console.log(`  🔄 Refreshing recommend page after already-processed skip...`);
+      await safeNavigate(page, JOBRIGHT_RECOMMEND_URL, { maxRetries: 2, waitAfter: 3000 });
+      cardIndex = 0; // Re-fetch cards from top after refresh
       continue;
     }
     

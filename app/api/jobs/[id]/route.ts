@@ -29,7 +29,7 @@ export async function PATCH(
 ) {
   try {
     const body = await request.json();
-    const { title, company, externalUrl } = body;
+    const { title, company, externalUrl, invitedToInterview } = body;
 
     const job = await prisma.jobApplication.update({
       where: { id: parseInt(params.id) },
@@ -37,6 +37,7 @@ export async function PATCH(
         ...(title && { title }),
         ...(company && { company }),
         ...(externalUrl && { externalUrl }),
+        ...(typeof invitedToInterview === "boolean" && { invitedToInterview }),
       },
     });
 

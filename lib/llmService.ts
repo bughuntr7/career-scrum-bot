@@ -7,8 +7,8 @@ const openai = new OpenAI({
 const PROMPT_VERSION = "1.0";
 
 /**
- * Generate a tailored resume based on job description
- * Uses the user's exact prompt requirements
+ * Generate a tailored resume based on job description.
+ * Uses the user's exact prompt requirements, but pushes harder on explicit keyword / requirements coverage.
  */
 export async function generateTailoredResume(
   baseResume: string,
@@ -61,6 +61,20 @@ Focus on:
 - Reflecting those tools in real, concrete use cases or project examples, not just buzzwords
 - Writing in a clear, natural tone that feels like a person describing meaningful work, not a keyword-stuffed list
 
+KEYWORD / REQUIREMENTS COVERAGE (VERY IMPORTANT):
+- Carefully read the JOB DESCRIPTION and identify the most important:
+  * Skills / technologies / frameworks / platforms
+  * Responsibilities and outcomes (what success looks like in this role)
+  * Domain context (e.g. B2B SaaS, ML infra, data platforms, LLM agents, etc.)
+- For each MAJOR skill/technology mentioned in the job description:
+  * Try to reflect it in at least ONE of:
+    - SUMMARY
+    - SKILLS
+    - A bullet + the "Technologies & Skills" line of a RECENT work experience (ideally last 2–3 roles)
+  * If it is not realistically aligned with the candidate's background, skip it rather than inventing experience.
+- Prioritize coverage in the most recent roles first – match the job's tech stack and responsibilities as closely as possible there.
+- Make sure the final resume would score highly in an automated keyword scan against the job description, while still reading as an honest, coherent narrative.
+
 Additionally:
 - Research each company I've worked for and suggest realistic features, problems solved, improvements, or initiatives I might have worked on based on their business at the time
 - Add bullet points that reflect those projects using the target tech stack
@@ -95,13 +109,14 @@ CRITICAL: Return ONLY the complete tailored resume text. Do NOT include any prea
 }
 
 /**
- * Generate a story-like cover letter
- * 
+ * Generate a story-like cover letter.
+ *
  * Requirements:
  * - Story-like, creative, verbal style
  * - No bullet symbols (-)
  * - At least 12 sentences
  * - Connects candidate's experience to job opportunity
+ * - Explicitly covers the key requirements / technologies from the job description
  */
 export async function generateCoverLetter(
   baseResume: string,
@@ -135,7 +150,11 @@ INSTRUCTIONS:
    - Body (2-3 paragraphs): Specific examples of relevant experience, skills, and achievements
    - Closing: Strong conclusion expressing eagerness for an interview
 7. **Tone**: Professional but warm, confident but humble, authentic and human
-8. **Specificity**: Reference specific technologies, projects, or achievements from the resume that match the job requirements
+8. **Specificity & KEYWORD COVERAGE**:
+   - Identify the most important requirements and technologies from the job description.
+   - Explicitly reference several of those key skills / tools / responsibilities in the body paragraphs.
+   - When you mention a technology or responsibility from the job description, tie it to a concrete example from the candidate's background (from the resume).
+   - Aim for a cover letter that would score highly in an automated keyword scan against this job description, while still reading as natural, human text.
 
 CRITICAL: Return ONLY the cover letter body text. Do NOT include:
 - Salutations (e.g., "Dear Hiring Manager,")

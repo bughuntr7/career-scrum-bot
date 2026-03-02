@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -59,6 +60,7 @@ model JobApplication {
   jobrightUrl        String?           @db.VarChar(500)
   externalUrl        String            @db.VarChar(2048)
   status             ApplicationStatus @default(SAVED)
+  invitedToInterview Boolean           @default(false)
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   appliedAt          DateTime?

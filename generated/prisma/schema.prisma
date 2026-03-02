@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ApplicationStatus {
+  SAVED
+  READY_TO_APPLY
+  APPLIED
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+enum AutomationRunStatus {
+  SUCCESS
+  FAILED
+  PARTIAL
+}
+
+model User {
+  id              Int              @id @default(autoincrement())
+  email           String           @unique
+  passwordHash    String
+  createdAt       DateTime         @default(now())
+  resumes         Resume[]
+  jobApplications JobApplication[]
+  automationRuns  AutomationRun[]
+}
+
+model Resume {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  name      String
+  rawText   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id])
+  tailoredResumes TailoredResume[]
+  coverLetters    CoverLetter[]
+}
+
+model JobApplication {
+  id                 Int               @id @default(autoincrement())
+  userId             Int
+  source             String            @default("jobright") @db.VarChar(50) // jobright, ziprecruiter, etc.
+  jobrightJobId      String?           @db.VarChar(255)
+  title              String
+  company            String
+  location           String?
+  jobrightMatchScore Float?
+  jobrightBoard      String?           @db.VarChar(50)
+  jobrightUrl        String?           @db.VarChar(500)
+  externalUrl        String            @db.VarChar(2048)
+  status             ApplicationStatus @default(SAVED)
+  invitedToInterview Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  appliedAt          DateTime?
+
+  user            User             @relation(fields: [userId], references: [id])
+  jobDescription  JobDescription?
+  tailoredResumes TailoredResume[]
+  coverLetters    CoverLetter[]
+
+  @@unique([userId, externalUrl])
+  @@unique([title, company]) // Prevent duplicates by title + company
+}
+
+model JobDescription {
+  id               Int      @id @default(autoincrement())
+  jobApplicationId Int      @unique
+  fullText         String
+  source           String   @default("company_site")
+  createdAt        DateTime @default(now())
+
+  jobApplication JobApplication @relation(fields: [jobApplicationId], references: [id])
+}
+
+model TailoredResume {
+  id               Int      @id @default(autoincrement())
+  jobApplicationId Int
+  baseResumeId     Int
+  llmModel         String
+  promptVersion    String
+  outputText       String
+  createdAt        DateTime @default(now())
+
+  jobApplication JobApplication @relation(fields: [jobApplicationId], references: [id])
+  baseResume     Resume         @relation(fields: [baseResumeId], references: [id])
+}
+
+model CoverLetter {
+  id               Int      @id @default(autoincrement())
+  jobApplicationId Int
+  baseResumeId     Int?
+  llmModel         String
+  promptVersion    String
+  outputText       String
+  createdAt        DateTime @default(now())
+
+  jobApplication JobApplication @relation(fields: [jobApplicationId], references: [id])
+  baseResume     Resume?        @relation(fields: [baseResumeId], references: [id])
+}
+
+model AutomationRun {
+  id         Int                 @id @default(autoincrement())
+  userId     Int
+  type       String
+  startedAt  DateTime            @default(now())
+  finishedAt DateTime?
+  jobsFound  Int?
+  jobsSaved  Int?
+  status     AutomationRunStatus @default(SUCCESS)
+  logExcerpt String?
+
+  user User @relation(fields: [userId], references: [id])
+}

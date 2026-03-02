@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
       company: true,
       source: true,
       externalUrl: true,
+      invitedToInterview: true,
       createdAt: true,
       jobrightMatchScore: true,
       jobDescription: {
@@ -117,6 +118,7 @@ export async function POST(req: NextRequest) {
           company: true,
           source: true,
           externalUrl: true,
+          invitedToInterview: true,
           createdAt: true,
           jobrightMatchScore: true,
           jobDescription: { select: { id: true } },
@@ -177,6 +179,7 @@ export async function POST(req: NextRequest) {
         company: true,
         source: true,
         externalUrl: true,
+        invitedToInterview: true,
         createdAt: true,
         jobrightMatchScore: true,
         jobDescription: { select: { id: true } },

@@ -24,7 +24,11 @@
     "explore:ziprecruiter": "tsx scripts/exploreZipRecruiter.ts",
     "glassdoor:nodriver": "python scripts/glassdoor_nodriver.py",
     "glassdoor:init": "tsx scripts/glassdoorInit.ts",
-    "glassdoor:scan": "tsx scripts/glassdoorScan.ts"
+    "glassdoor:scan": "tsx scripts/glassdoorScan.ts",
+    "dice:init": "tsx scripts/diceInit.ts",
+    "dice:scan": "tsx scripts/diceScan.ts",
+    "simplify:init": "tsx scripts/simplifyInit.ts",
+    "simplify:scan": "node --max-old-space-size=4096 node_modules/tsx/dist/cli.mjs scripts/simplifyScan.ts"
   },
   "dependencies": {
     "@prisma/client": "5.22.0",
@@ -50,6 +54,7 @@
     "playwright-extra": "^4.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "prisma": "5.22.0",
+    "ts-node": "10.9.2",
     "tsx": "4.19.2",
     "typescript": "5.6.3"
   }

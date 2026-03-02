@@ -12,6 +12,7 @@ type Job = {
   company: string;
   source: string;
   externalUrl: string;
+  invitedToInterview: boolean;
   createdAt: string;
   jobrightMatchScore: number | null;
   hasDescription: boolean;
@@ -49,10 +50,11 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
     title: "", 
     company: "", 
     externalUrl: "",
-    description: ""
+    description: "",
+    invitedToInterview: false,
   });
   const [dateFilter, setDateFilter] = useState<string>("all"); // "all", "today", "week", "month"
-  const [sourceFilter, setSourceFilter] = useState<string>("all"); // "all", "jobright", "ziprecruiter"
+  const [interviewFilter, setInterviewFilter] = useState<string>("all"); // "all", "yes", "no"
   const [descriptionFilter, setDescriptionFilter] = useState<string>("all"); // "all", "with", "without"
   const [loadingEditForm, setLoadingEditForm] = useState(false);
   const [savingEditForm, setSavingEditForm] = useState(false);
@@ -83,6 +85,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
       company: job.company,
       externalUrl: job.externalUrl,
       description: "",
+      invitedToInterview: job.invitedToInterview ?? false,
     });
 
     // Load job description if it exists
@@ -110,6 +113,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
           title: editForm.title,
           company: editForm.company,
           externalUrl: editForm.externalUrl,
+          invitedToInterview: editForm.invitedToInterview,
         }),
       });
 
@@ -139,7 +143,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
       // Update local state
       setJobs(jobs.map((j) => 
         j.id === id 
-          ? { ...updated, hasDescription: editForm.description.trim().length > 0, hasResume: j.hasResume, hasCoverLetter: j.hasCoverLetter }
+          ? { ...updated, invitedToInterview: updated.invitedToInterview ?? false, hasDescription: editForm.description.trim().length > 0, hasResume: j.hasResume, hasCoverLetter: j.hasCoverLetter }
           : j
       ));
       setEditingId(null);
@@ -153,7 +157,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
 
   const handleCancel = () => {
     setEditingId(null);
-    setEditForm({ title: "", company: "", externalUrl: "", description: "" });
+    setEditForm({ title: "", company: "", externalUrl: "", description: "", invitedToInterview: false });
   };
 
   const handleAddJobManual = async () => {
@@ -195,13 +199,13 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
         const list = await listRes.json();
         setJobs(list);
         setDateFilter("all");
-        setSourceFilter("all");
+        setInterviewFilter("all");
         setDescriptionFilter("all");
         setSearchTerm("");
       } else {
         setJobs((prev) => [newJob, ...prev]);
         setDateFilter("all");
-        setSourceFilter("all");
+        setInterviewFilter("all");
       }
       setShowAddManual(false);
       setAddForm({ title: "", company: "", externalUrl: "", description: "", source: "ziprecruiter" });
@@ -314,9 +318,11 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
       });
     }
 
-    // Filter by source
-    if (sourceFilter !== "all") {
-      filtered = filtered.filter((job) => (job.source || "jobright") === sourceFilter);
+    // Filter by invited to interview
+    if (interviewFilter !== "all") {
+      filtered = filtered.filter((job) =>
+        interviewFilter === "yes" ? job.invitedToInterview : !job.invitedToInterview
+      );
     }
 
     // Filter by description presence
@@ -354,7 +360,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
     }
 
     return filtered;
-  }, [jobs, dateFilter, sourceFilter, descriptionFilter, searchTerm]);
+  }, [jobs, dateFilter, interviewFilter, descriptionFilter, searchTerm]);
 
   const totalFiltered = filteredJobs.length;
   const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
@@ -369,7 +375,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
 
   useEffect(() => {
     setPage(1);
-  }, [dateFilter, sourceFilter, descriptionFilter, searchTerm, pageSize]);
+  }, [dateFilter, interviewFilter, descriptionFilter, searchTerm, pageSize]);
 
   const rangeStart = totalFiltered === 0 ? 0 : (page - 1) * pageSize + 1;
   const rangeEnd = Math.min(page * pageSize, totalFiltered);
@@ -454,6 +460,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
       "Job Title",
       "Source",
       "Site URL",
+      "Invited to Interview",
       "Match Score",
       "Description",
       "Resume",
@@ -477,6 +484,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
       job.title,
       getSourceLabel(job.source),
       job.externalUrl,
+      job.invitedToInterview ? "Yes" : "No",
       job.jobrightMatchScore ? `${job.jobrightMatchScore}%` : "N/A",
       job.hasDescription ? "Yes" : "No",
       job.hasResume ? "Yes" : "No",
@@ -547,13 +555,13 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
             </select>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <label htmlFor="sourceFilter" style={{ fontWeight: 500 }}>
-              Source:
+            <label htmlFor="interviewFilter" style={{ fontWeight: 500 }}>
+              Interview:
             </label>
             <select
-              id="sourceFilter"
-              value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
+              id="interviewFilter"
+              value={interviewFilter}
+              onChange={(e) => setInterviewFilter(e.target.value)}
               style={{
                 padding: "0.5rem",
                 border: "1px solid #d1d5db",
@@ -562,14 +570,13 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
               }}
             >
               <option value="all">All</option>
-              {SOURCE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
+              <option value="yes">Invited</option>
+              <option value="no">Not invited</option>
             </select>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <label htmlFor="descriptionFilter" style={{ fontWeight: 500 }}>
-              Filter by Description:
+              Description:
             </label>
             <select
               id="descriptionFilter"
@@ -802,6 +809,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
             <th style={{ textAlign: "left", padding: "0.75rem", maxWidth: "200px" }}>Job Title</th>
             <th style={{ textAlign: "left", padding: "0.75rem" }}>Source</th>
             <th style={{ textAlign: "left", padding: "0.75rem" }}>Site URL</th>
+            <th style={{ textAlign: "left", padding: "0.75rem" }}>Interview</th>
             <th style={{ textAlign: "left", padding: "0.75rem" }}>Docs</th>
             <th style={{ textAlign: "left", padding: "0.75rem" }}>Match Score</th>
             <th style={{ textAlign: "left", padding: "0.75rem" }}>Actions</th>
@@ -853,6 +861,24 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
                   ? `${job.externalUrl.substring(0, 50)}...`
                   : job.externalUrl}
               </Link>
+            </td>
+
+            {/* Invited to interview */}
+            <td style={{ padding: "0.75rem" }}>
+              <span
+                title={job.invitedToInterview ? "Invited to interview" : "Not invited yet"}
+                style={{
+                  display: "inline-block",
+                  padding: "0.2rem 0.5rem",
+                  borderRadius: "4px",
+                  fontSize: "0.75rem",
+                  fontWeight: 500,
+                  backgroundColor: job.invitedToInterview ? "#dcfce7" : "#f3f4f6",
+                  color: job.invitedToInterview ? "#166534" : "#6b7280",
+                }}
+              >
+                {job.invitedToInterview ? "Yes" : "No"}
+              </span>
             </td>
 
             {/* Docs status: description / resume / cover letter (colored circles) */}
@@ -1298,6 +1324,20 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
                   }}
                   placeholder="Enter application URL"
                 />
+              </div>
+
+              {/* Invited to interview */}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <input
+                  type="checkbox"
+                  id="edit-invitedToInterview"
+                  checked={editForm.invitedToInterview}
+                  onChange={(e) => setEditForm({ ...editForm, invitedToInterview: e.target.checked })}
+                  style={{ width: "1rem", height: "1rem", cursor: "pointer" }}
+                />
+                <label htmlFor="edit-invitedToInterview" style={{ fontWeight: 500, fontSize: "0.875rem", cursor: "pointer" }}>
+                  Invited to interview
+                </label>
               </div>
 
               {/* Job Description */}

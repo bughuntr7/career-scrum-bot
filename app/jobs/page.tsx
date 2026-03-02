@@ -12,6 +12,7 @@ async function getJobs() {
       company: true,
       source: true,
       externalUrl: true,
+      invitedToInterview: true,
       createdAt: true,
       jobrightMatchScore: true,
       jobDescription: {

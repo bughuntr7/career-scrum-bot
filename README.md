@@ -93,12 +93,23 @@ RESUMES_OUTPUT_DIR=Resumes
 # DOC_GENERATION_SOURCE=chatgpt-ui
 
 # ZipRecruiter (optional)
-# ZIPRECRUITER_SEARCH_URL=...   # search URL with filters
-# ZIPRECRUITER_MAX_JOBS_PER_RUN=2   # max jobs per scan (only "Apply" jobs; skips "1-Click Apply")
+# ZIPRECRUITER_SEARCH_URL=...              # search URL with filters
+# ZIPRECRUITER_MAX_JOBS_PER_RUN=2         # max jobs per scan (only "Apply" jobs; skips "1-Click Apply")
 
 # Glassdoor (optional): bypass Cloudflare with nodriver, then scan. Skip Easy Apply; only "Apply on employer site".
 # python scripts/glassdoor_nodriver.py  →  npm run glassdoor:init  →  npm run glassdoor:scan
-# GLASSDOOR_SEARCH_URL=...   GLASSDOOR_MAX_JOBS_PER_RUN=5
+# GLASSDOOR_SEARCH_URL=...               # search URL
+# GLASSDOOR_MAX_JOBS_PER_RUN=5
+
+# Dice (optional): scan Dice.com search results and save jobs using Dice job-detail URL.
+# Run once: npm run dice:init (log in in the browser; session saved). Then: npm run dice:scan
+# DICE_CONTEXT_DIR=...                   # optional; default ~/.jobbot/dice
+# DICE_SEARCH_URL=...                    # search URL (e.g. remote ML roles)
+# DICE_MAX_JOBS_PER_RUN=10
+# Simplify (optional): run once npm run simplify:init (log in in the browser; session saved), then npm run simplify:scan.
+# SIMPLIFY_SEARCH_URL=...                # optional; default ML engineer, Remote USA, minSalary=100000
+# SIMPLIFY_MAX_JOBS_PER_RUN=5
+# SIMPLIFY_CONTEXT_DIR=...               # optional; default ~/.jobbot/simplify
 ```
 
 ### 3. Run Prisma migrations

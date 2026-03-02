@@ -1,4 +1,4 @@
-import { JobApplication } from "@prisma/client";
+import { JobApplication } from "../generated/prisma";
 
 import { prisma } from "./prisma";
 
